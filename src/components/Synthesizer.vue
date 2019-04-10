@@ -102,25 +102,11 @@ export default {
     this.keyWidth = this.$refs.synthesizer.offsetWidth / this.numberOfNotesInOctave
     this.keyHeight = this.$refs.synthesizer.offsetHeight / ( this.keys.length / this.numberOfMajorNotesInOctave )
 
-    this.synths = Array.apply( null, new Array( this.currentFrequencies.length ) )
-    this.synths.forEach( ( _, i, arr ) => {
-      arr[ i ] = new Tone.Synth( {
-        oscillator: {
-          type: this.oscillatorType,
-        },
-        envelope: {
-          attack: 0.005,
-          decay: 0.1,
-          sustain: 0.3,
-          release: 1,
-        },
-      } ).toMaster()
-    } )
+    this.synths = new Array( this.currentFrequencies.length ).fill( null )
+    this.makeSynths( 0 )
 
     window.addEventListener( "keydown", this.keyDownListener )
     window.addEventListener( "keyup", this.keyUpListener )
-
-    setTimeout( this.$parent.hideLoadingScreen, this.$parent.initTimeout )
   },
   beforeDestroy() {
     this.synths.forEach( synth => {
@@ -231,6 +217,7 @@ export default {
       this.displayControls = this.displayControls ? null : "none"
     },
     resetOscillators() {
+      if ( !this.synths || this.synths.includes( null ) ) return
       this.synths.forEach( ( synth ) => {
         synth.oscillator.set( {
           type: this.oscillatorType,
@@ -248,6 +235,24 @@ export default {
       const s = this.$refs.synthesizer
       return ( ( ( s.offsetLeft + cx ) / this.keyWidth ) | 0 ) +
         ( ( ( s.offsetTop + cy ) / this.keyHeight ) | 0 ) * this.numberOfNotesInOctave
+    },
+    makeSynths( ind ) {
+      if ( ind < this.synths.length ) {
+        this.synths[ ind ] = new Tone.Synth( {
+          oscillator: {
+            type: this.oscillatorType,
+          },
+          envelope: {
+            attack: 0.005,
+            decay: 0.1,
+            sustain: 0.3,
+            release: 1,
+          },
+        } ).toMaster()
+        window.requestAnimationFrame( () => this.makeSynths( ind + 1 ) )
+      } else {
+        setTimeout( this.$parent.hideLoadingScreen, this.$parent.initTimeout )
+      }
     },
   },
 }

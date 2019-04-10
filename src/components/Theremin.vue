@@ -74,7 +74,6 @@ export default {
       },
       backgroundColor: getComputedStyle( document.documentElement )
         .getPropertyValue( "--main-bg-color" ),
-      initialized: null,
     }
   },
   computed: {
