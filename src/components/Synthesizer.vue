@@ -286,8 +286,9 @@ export default {
     flex-direction column
 
   #synthesizer
-    width 100%
     box-sizing border-box
+    height 100%
+    width 100%
     flex 1 1 auto
 
     display flex
@@ -297,10 +298,10 @@ export default {
     cursor pointer
 
     & > .key
+      box-sizing border-box
       height 25%
       width 8.3333%
       flex 1 1 auto
-      box-sizing border-box
 
       display flex
       align-items center
