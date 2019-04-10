@@ -1,11 +1,9 @@
 <template>
   <div id="main">
     <synthesizer
-        v-if="mode === modes[0]"
-        :ctx="ctx"/>
+        v-if="mode === modes[0]"/>
     <theremin
-        v-if="mode === modes[1]"
-        :audioCtx="ctx"/>
+        v-if="mode === modes[1]"/>
     <div id="mode">
       <label>
         <span class="label">Choose instrument:</span>
@@ -18,18 +16,19 @@
         </select>
       </label>
     </div>
+    <loading-screen id="loading-screen" v-if="loading"/>
   </div>
 </template>
 
 <script>
-import {
-  mapState,
-} from "vuex"
+import { mapState, } from "vuex"
+import LoadingScreen from "../components/LoadingScreen"
 import Synthesizer from "../components/Synthesizer"
 import Theremin from "../components/Theremin"
 
 export default {
   components: {
+    LoadingScreen,
     Synthesizer,
     Theremin,
   },
@@ -37,18 +36,32 @@ export default {
     return {
       ctx: null,
       mode: null,
+      loading: null,
+      initTimeout: 1000,
     }
-  },
-  beforeMount() {
-    this.ctx = new AudioContext()
-
-    const modeChoice = 0
-    this.mode = this.modes[ modeChoice ]
   },
   computed: {
     ...mapState( [
       "modes",
     ] ),
+  },
+  watch: {
+    mode() {
+      this.showLoadingScreen()
+    },
+  },
+  beforeMount() {
+    // TODO: remove delay on mode change
+    const modeChoice = 0
+    this.mode = this.modes[ modeChoice ]
+  },
+  methods: {
+    hideLoadingScreen() {
+      this.loading = false
+    },
+    showLoadingScreen() {
+      this.loading = true
+    },
   },
 }
 </script>
@@ -60,8 +73,8 @@ export default {
   :root
     --main-bg-rgb mbg
     --main-rgb m
-    --main-bg-color rgb( mbg )
-    --main-color rgb( m )
+    --main-bg-color rgb(mbg)
+    --main-color rgb(m)
 
   #main
     height 100vh
@@ -148,7 +161,7 @@ export default {
       background var(--main-color)
       cursor pointer
       -webkit-appearance none
-      margin-top (trackHeight/2 - size/2 - unit(borderWidth / 16, em))
+      margin-top (trackHeight/ 2 - size/ 2 - unit(borderWidth / 16, em))
 
     &::-moz-range-track
       width 100%
@@ -204,4 +217,16 @@ export default {
       &::-ms-fill-upper
         background var(--main-color)
 
+  #loading-screen
+    position absolute
+    height 100%
+    width 100%
+    display flex
+    align-items center
+    justify-content center
+    background-color var(--main-bg-color)
+
+    & > span
+      font-size 2em
+      font-weight bold
 </style>

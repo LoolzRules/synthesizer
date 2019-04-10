@@ -33,7 +33,7 @@ export default {
       ],
       rainIndices: null,
       MAX_VALUE: 0,
-      DELAY: 100,
+      DELAY: 75,
       ELEMENT_SIZE: 24,
       ROW_LENGTH: 0,
       COLUMN_LENGTH: 0,
@@ -41,24 +41,28 @@ export default {
       ELEMENT_HEIGHT: 0,
       LETTER_SCALING: 0.75,
       SHIFT_PROBABILITY: 0.5,
+      prevTime: null,
+      animID: null,
     }
   },
   mounted() {
     this.init()
     this.initRain()
   },
+  beforeDestroy() {
+    if ( this.animID ) window.cancelAnimationFrame( this.animID )
+  },
   methods: {
     init() {
       this.gCtx = this.$refs.matrixRain.getContext( "2d" )
 
       this.ELEMENT_SIZE = 24
-      this.ROW_LENGTH = this.mathFloor( this.$refs.matrixRain.offsetWidth / this.ELEMENT_SIZE )
-      this.COLUMN_LENGTH = this.mathFloor( this.$refs.matrixRain.offsetHeight / this.ELEMENT_SIZE )
+      this.ROW_LENGTH = ( this.$refs.matrixRain.offsetWidth / this.ELEMENT_SIZE ) | 0
+      this.COLUMN_LENGTH = ( this.$refs.matrixRain.offsetHeight / this.ELEMENT_SIZE ) | 0
       this.ELEMENT_WIDTH = this.$refs.matrixRain.offsetWidth / this.ROW_LENGTH
       this.ELEMENT_HEIGHT = this.$refs.matrixRain.offsetHeight / this.COLUMN_LENGTH
 
       this.rainIndices = new Array( this.ROW_LENGTH )
-      // eslint-disable-next-line no-magic-numbers
       this.MAX_VALUE = 2 * this.colors.length + this.COLUMN_LENGTH
 
       this.$refs.matrixRain.height = this.$refs.matrixRain.offsetHeight
@@ -78,12 +82,20 @@ export default {
       )
 
       for ( let i = 0; i < this.rainIndices.length; i++ ) {
-        this.rainIndices[ i ] = this.mathFloor( Math.random() * this.MAX_VALUE ) - this.MAX_VALUE
+        this.rainIndices[ i ] = ( ( Math.random() * this.MAX_VALUE ) | 0 ) - this.MAX_VALUE
       }
 
-      return setInterval( this.updateRain, this.DELAY )
+      this.prevTime = -Infinity
+      this.updateRain()
     },
-    updateRain() {
+    updateRain( time ) {
+      if ( time - this.DELAY < this.prevTime ) {
+        this.animID = window.requestAnimationFrame( this.updateRain )
+        return
+      }
+
+      this.prevTime = time
+
       for ( let i = 0; i < this.ROW_LENGTH; i++ ) {
         this.rainIndices[ i ] = ++this.rainIndices[ i ] % this.MAX_VALUE
         if ( this.rainIndices[ i ] > this.colors.length + this.COLUMN_LENGTH && Math.random() > this.SHIFT_PROBABILITY ) {
@@ -103,26 +115,24 @@ export default {
               this.ELEMENT_HEIGHT
             )
 
-            const letterGroupIndex = this.mathFloor( Math.random() * this.letters.length )
+            const letterGroupIndex = Math.random() * this.letters.length | 0
             const letterGroup = this.letters[ letterGroupIndex ]
             const shiftToCenter = 0.5
             this.placeLetter(
               color,
-              letterGroup[ this.mathFloor( Math.random() * letterGroup.length ) ],
+              letterGroup[ Math.random() * letterGroup.length | 0 ],
               ( i + shiftToCenter ) * this.ELEMENT_WIDTH,
               ( j + shiftToCenter ) * this.ELEMENT_HEIGHT
             )
           }
         }
       }
+
+      this.animID = window.requestAnimationFrame( this.updateRain )
     },
     selectLast( array ) {
       // eslint-disable-next-line no-magic-numbers
       return array.slice( -1 ).pop()
-    },
-    mathFloor( val ) {
-      // eslint-disable-next-line no-magic-numbers
-      return val | 0
     },
     placeRectangle( col, x1, y1, x2, y2 ) {
       this.gCtx.shadowBlur = 0

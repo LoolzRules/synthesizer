@@ -1,23 +1,29 @@
 <template>
   <div id="synthesizer-wrap">
-    <div id="synthesizer">
-      <div v-for="( freq, ind ) in currentFrequencies" :key="ind"
-           @click="clickNote( ind )"
+    <div id="synthesizer"
+         ref="synthesizer"
+         @touchstart="touchStartListener( $event )"
+         @touchend="touchEndListener( $event )"
+         @touchmove="touchMoveListener( $event )">
+      <div v-for="( note, ind ) in currentNotes" :key="ind"
+           @mousedown="playNote( ind )"
+           @mouseup="stopNote( ind )"
+           @mouseleave="mouseLeaveListener( $event, ind )"
+           @mouseenter="mouseEnterListener( $event, ind )"
            ref="keys"
-           :data-note="currentNotes[ind]"
-           :data-frequency="freq"
+           :data-note="note"
            class="key">
           <span>
-            {{ currentNotes[ind] }}
+            {{ note }}
           </span>
       </div>
     </div>
     <div id="info">
       <div id="controls" :style="{ display: displayControls }">
         <label>
-          <span class="label">Choose octave to start from:</span>
-          <select v-model="octaveOffset">
-            <option v-for="option in octaveOffsetOptions"
+          <span class="label">Oscillator type:</span>
+          <select v-model="oscillatorType">
+            <option v-for="option in oscillatorTypes"
                     :key="option"
                     :value="option">
               {{ option }}
@@ -25,102 +31,36 @@
           </select>
         </label>
         <label>
-          <span class="label">Choose type of sound:</span>
-          <select v-model="oscillatorType">
-            <option v-for="( option, index ) in oscillatorTypes"
-                    :key="index"
+          <span class="label">Choose octave to start from:</span>
+          <select v-model="octaveOffset">
+            <option v-for="option in octaveOffsets"
+                    :key="option"
                     :value="option">
               {{ option }}
             </option>
           </select>
         </label>
-        <label>
-          <span class="label">Volume: {{ gain.value }}</span>
-          <input id="volume" type="range"
-                 v-model="gain.value"
-                 :min="gain.min"
-                 :max="gain.max">
-        </label>
       </div>
-      <span id="lastPlayed" @click="switchControls">
-        {{ lastPlayed.length === 0 ? "Last played notes are displayed here" : lastPlayed.join(" ") }}
-      </span>
     </div>
   </div>
 </template>
 
 <script>
-import {
-  mapState,
-} from "vuex"
+import { mapState, } from "vuex"
+import Tone from "tone"
 
 export default {
   name: "synthesizer",
-  props: [
-    "ctx",
-  ],
   data() {
     return {
-      keyBindings: {},
-      octaveOffset: 3,
-      gain: {
-        value: 75,
-        min: 0,
-        max: 100,
-      },
+      synths: null,
       oscillatorType: null,
-      lastPlayed: [],
+      octaveOffset: null,
       displayControls: null,
+      touchedNoteIndices: null,
+      keyWidth: null,
+      keyHeight: null,
     }
-  },
-  mounted() {
-    const firstChoice = 0
-    this.oscillatorType = this.oscillatorTypes[ firstChoice ]
-
-    window.addEventListener( "keydown", this.keyEventListener )
-  },
-  beforeDestroy() {
-    window.removeEventListener( "keydown", this.keyEventListener )
-  },
-  methods: {
-    keyEventListener( event ) {
-      let index = this.keys.indexOf( event.key )
-      const NOT_FOUND_INDEX = -1
-
-      if ( index !== NOT_FOUND_INDEX ) {
-        event.preventDefault()
-        const offset = Math.floor( index / this.numberOfMajorNotesInOctave ) * this.numberOfNotesInOctave
-        const newIndex = offset + this.keyMap[ index % this.numberOfMajorNotesInOctave ]
-        this.clickNote( newIndex )
-      }
-    },
-    clickNote( index ) {
-      const key = this.$refs.keys[ index ]
-      this.lastPlayed.push( key.dataset.note )
-      this.playSound( key.dataset.frequency )
-    },
-    playSound( frequency ) {
-      const o = this.ctx.createOscillator()
-      const g = this.ctx.createGain()
-
-      o.type = this.oscillatorType
-      o.frequency.value = frequency
-      g.gain.value = this.gain.value / this.gain.max
-
-      o.connect( g )
-      g.connect( this.ctx.destination )
-
-      const endDelay = 1
-      const finalValue = 0.00001
-      o.start()
-      g.gain.exponentialRampToValueAtTime(
-        finalValue, this.ctx.currentTime + endDelay
-      )
-    },
-    switchControls() {
-      console.log( this.displayControls )
-      this.displayControls = this.displayControls ? null : "none"
-    },
   },
   computed: {
     ...mapState( [
@@ -130,23 +70,184 @@ export default {
       "keyMap",
       "numberOfMajorNotesInOctave",
       "numberOfNotesInOctave",
-      "octaveOffsetOptions",
       "oscillatorTypes",
-      "modes",
+      "octaveOffsets",
     ] ),
     minIndex() {
       return this.numberOfNotesInOctave * this.octaveOffset
     },
     maxIndex() {
-      return this.numberOfNotesInOctave * ( this.octaveOffset + this.keys.length / this.numberOfMajorNotesInOctave )
+      return this.numberOfNotesInOctave * ( this.octaveOffset + this.keys.length / this.numberOfMajorNotesInOctave ) - 1
     },
     currentFrequencies() {
-      return this.frequencies.filter( ( el, i ) => i >= this.minIndex && i < this.maxIndex )
+      return this.frequencies.filter( ( el, i ) => i >= this.minIndex && i <= this.maxIndex )
     },
     currentNotes() {
       return this.currentFrequencies.map( ( el, ind ) => {
         return `${this.notes[ ind % this.numberOfNotesInOctave ]}${Math.floor( ( this.minIndex + ind ) / this.numberOfNotesInOctave )}`
       } )
+    },
+  },
+  watch: {
+    oscillatorType() {
+      this.resetOscillators()
+    },
+  },
+  mounted() {
+    const initialChoice = 0
+    this.oscillatorType = this.oscillatorTypes[ initialChoice ]
+    this.octaveOffset = this.octaveOffsets[ initialChoice ]
+
+    this.touchedNoteIndices = []
+    this.keyWidth = this.$refs.synthesizer.offsetWidth / this.numberOfNotesInOctave
+    this.keyHeight = this.$refs.synthesizer.offsetHeight / ( this.keys.length / this.numberOfMajorNotesInOctave )
+
+    this.synths = Array.apply( null, new Array( this.currentFrequencies.length ) )
+    this.synths.forEach( ( _, i, arr ) => {
+      arr[ i ] = new Tone.Synth( {
+        oscillator: {
+          type: this.oscillatorType,
+        },
+        envelope: {
+          attack: 0.005,
+          decay: 0.1,
+          sustain: 0.3,
+          release: 1,
+        },
+      } ).toMaster()
+    } )
+
+    window.addEventListener( "keydown", this.keyDownListener )
+    window.addEventListener( "keyup", this.keyUpListener )
+
+    setTimeout( this.$parent.hideLoadingScreen, this.$parent.initTimeout )
+  },
+  beforeDestroy() {
+    this.synths.forEach( synth => {
+      synth.dispose()
+    } )
+    window.removeEventListener( "keydown", this.keyDownListener )
+    window.removeEventListener( "keyup", this.keyUpListener )
+  },
+  methods: {
+    keyDownListener( event ) {
+      const index = this.keys.indexOf( event.key )
+      const NOT_FOUND_INDEX = -1
+      if ( index === NOT_FOUND_INDEX ) return
+
+      event.preventDefault()
+      if ( event.repeat ) return
+
+      const offset = Math.floor( index / this.numberOfMajorNotesInOctave ) * this.numberOfNotesInOctave
+      const newIndex = offset + this.keyMap[ index % this.numberOfMajorNotesInOctave ]
+      this.playNote( newIndex )
+    },
+    keyUpListener( event ) {
+      const index = this.keys.indexOf( event.key )
+      const NOT_FOUND_INDEX = -1
+      if ( index === NOT_FOUND_INDEX ) return
+
+      event.preventDefault()
+      const offset = Math.floor( index / this.numberOfMajorNotesInOctave ) * this.numberOfNotesInOctave
+      const newIndex = offset + this.keyMap[ index % this.numberOfMajorNotesInOctave ]
+      this.stopNote( newIndex )
+    },
+    mouseEnterListener( event, ind ) {
+      const LMB_CODE = 1
+      if ( event.buttons === LMB_CODE ) this.playNote( ind )
+    },
+    mouseLeaveListener( event, ind ) {
+      const LMB_CODE = 1
+      if ( event.buttons === LMB_CODE ) this.stopNote( ind )
+    },
+    playNote( index ) {
+      this.synths[ index ].triggerAttack( this.$refs.keys[ index ].dataset.note, "+0.05" )
+    },
+    stopNote( index ) {
+      this.synths[ index ].triggerRelease()
+    },
+    touchStartListener( event ) {
+      let coordinates = []
+      for ( let i = 0; i < event.changedTouches.length; i++ ) {
+        coordinates.push( {
+          x: event.changedTouches[ i ].clientX,
+          y: event.changedTouches[ i ].clientY,
+        } )
+      }
+
+      const noteIndices = coordinates
+        .filter( c => this.filterOutsideTouch( c.x, c.y ) )
+        .map( c => this.findIndexFromCoordinate( c.x, c.y ) )
+
+      noteIndices.forEach( ind => {
+        this.playNote( ind )
+      } )
+    },
+    touchEndListener( event ) {
+      let coordinates = []
+      for ( let i = 0; i < event.changedTouches.length; i++ ) {
+        coordinates.push( {
+          x: event.changedTouches[ i ].clientX,
+          y: event.changedTouches[ i ].clientY,
+        } )
+      }
+
+      const noteIndices = coordinates
+        .filter( c => this.filterOutsideTouch( c.x, c.y ) )
+        .map( c => this.findIndexFromCoordinate( c.x, c.y ) )
+
+      noteIndices.forEach( ind => {
+        this.stopNote( ind )
+      } )
+    },
+    touchMoveListener( event ) {
+      let coordinates = []
+      for ( let i = 0; i < event.touches.length; i++ ) {
+        coordinates.push( {
+          x: event.touches[ i ].clientX,
+          y: event.touches[ i ].clientY,
+        } )
+      }
+
+      const noteIndices = coordinates
+        .filter( c => this.filterOutsideTouch( c.x, c.y ) )
+        .map( c => this.findIndexFromCoordinate( c.x, c.y ) )
+
+      const toRemove = this.touchedNoteIndices.filter( val => !noteIndices.includes( val ) )
+      const toAppend = noteIndices.filter( val => !this.touchedNoteIndices.includes( val ) )
+      toRemove.forEach( index => {
+        this.stopNote( index )
+      } )
+      toAppend.forEach( index => {
+        this.playNote( index )
+      } )
+      this.touchedNoteIndices = [
+        ...this.touchedNoteIndices.filter( val => noteIndices.includes( val ) ),
+        ...toAppend,
+      ]
+    },
+    switchControls() {
+      console.log( this.displayControls )
+      this.displayControls = this.displayControls ? null : "none"
+    },
+    resetOscillators() {
+      this.synths.forEach( ( synth ) => {
+        synth.oscillator.set( {
+          type: this.oscillatorType,
+        } )
+      } )
+    },
+    filterOutsideTouch( cx, cy ) {
+      const s = this.$refs.synthesizer
+      return cx > s.offsetLeft &&
+        cy > s.offsetTop &&
+        cx < s.offsetLeft + s.offsetWidth &&
+        cy < s.offsetTop + s.offsetHeight
+    },
+    findIndexFromCoordinate( cx, cy ) {
+      const s = this.$refs.synthesizer
+      return ( ( ( s.offsetLeft + cx ) / this.keyWidth ) | 0 ) +
+        ( ( ( s.offsetTop + cy ) / this.keyHeight ) | 0 ) * this.numberOfNotesInOctave
     },
   },
 }

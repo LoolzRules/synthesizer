@@ -7,14 +7,14 @@
         opacity: opacity.value/100,
         backgroundColor,
       }"></div>
-      <!--<span>theremin</span>-->
+      <touch-tracker id="touch-tracker" ref="tracker"/>
     </div>
     <div id="info">
       <div id="controls">
         <label>
           <span class="label">Choose octave to start from:</span>
           <select v-model="octaveOffset">
-            <option v-for="option in octaveOffsetOptions"
+            <option v-for="option in octaveOffsets"
                     :key="option"
                     :value="option">
               {{ option }}
@@ -44,47 +44,84 @@
 </template>
 
 <script>
-import {
-  mapState,
-} from "vuex"
+import { mapState, } from "vuex"
 import MatrixRain from "./MatrixRain"
+import TouchTracker from "./TouchTracker"
+import Tone from "tone"
 
 export default {
   name: "theremin",
   components: {
     MatrixRain,
+    TouchTracker,
   },
-  props: [
-    "audioCtx",
-  ],
   data() {
     return {
-      octaveOffset: 2,
-      oscillator: null,
-      gain: null,
-      playSoundGain: null,
-      oscillatorType: null,
       isPlaying: false,
+      synth: null,
+      volume: null,
+      octaveOffset: null,
+      oscillatorType: null,
       opacity: {
         value: 100,
         min: 0,
         max: 100,
       },
-      defBgColor: getComputedStyle( document.documentElement )
+      volumeConfig: {
+        max: 10,
+        min: -40,
+        diff: 50,
+      },
+      backgroundColor: getComputedStyle( document.documentElement )
         .getPropertyValue( "--main-bg-color" ),
+      initialized: null,
     }
   },
+  computed: {
+    ...mapState( [
+      "notes",
+      "frequencies",
+      "keys",
+      "numberOfMajorNotesInOctave",
+      "numberOfNotesInOctave",
+      "oscillatorTypes",
+      "octaveOffsets",
+      "modes",
+    ] ),
+    minIndex() {
+      return this.numberOfNotesInOctave * this.octaveOffset
+    },
+    maxIndex() {
+      return this.numberOfNotesInOctave * ( this.octaveOffset + this.keys.length / this.numberOfMajorNotesInOctave ) - 1
+    },
+    currentMidFrequency() {
+      const midIndex = ( this.minIndex + this.maxIndex ) / 2
+      return this.frequencies[ midIndex | 0 ]
+    },
+  },
+  watch: {
+    oscillatorType() {
+      this.synth.oscillator.set( {
+        type: this.oscillatorType,
+      } )
+    },
+  },
   mounted() {
-    const typeChoice = 0
-    this.oscillatorType = this.oscillatorTypes[ typeChoice ]
+    const initialChoice = 0
+    this.oscillatorType = this.oscillatorTypes[ initialChoice ]
+    this.octaveOffset = this.octaveOffsets[ initialChoice ]
 
-    this.oscillator = this.audioCtx.createOscillator()
-    this.gain = this.audioCtx.createGain()
-
-    this.oscillator.connect( this.gain )
-    this.gain.connect( this.audioCtx.destination )
-
-    this.oscillator.type = this.oscillatorType
+    this.synth = new Tone.Synth( {
+      oscillator: {
+        type: this.oscillatorType,
+      },
+      envelope: {
+        attack: 0.005,
+        decay: 0.1,
+        sustain: 0.3,
+        release: 1,
+      },
+    } ).toMaster()
 
     this.$refs.theremin.addEventListener( "mousedown", this.downEventListener, false )
     this.$refs.theremin.addEventListener( "mouseup", this.upEventListener, false )
@@ -92,11 +129,13 @@ export default {
     this.$refs.theremin.addEventListener( "touchstart", this.downEventListener, false )
     this.$refs.theremin.addEventListener( "touchend", this.upEventListener, false )
     this.$refs.theremin.addEventListener( "touchmove", this.moveEventListener, false )
+
+    setTimeout( this.$parent.hideLoadingScreen, this.$parent.initTimeout )
   },
   beforeDestroy() {
-    if ( this.oscillator.started ) {
-      this.oscillator.started = false
-      this.oscillator.stop()
+    try {
+      this.synth.dispose()
+    } catch {
     }
     this.$refs.theremin.removeEventListener( "mousedown", this.downEventListener, false )
     this.$refs.theremin.removeEventListener( "mouseup", this.upEventListener, false )
@@ -107,114 +146,50 @@ export default {
   },
   methods: {
     downEventListener( event ) {
-      if ( this.isPlaying ) {
-        return
-      }
-
-      if ( this.audioCtx.state === "suspended" ) {
-        this.audioCtx.resume()
-      }
-
-      if ( !this.oscillator.started ) {
-        this.oscillator.started = true
-        this.oscillator.start()
-      }
-
+      if ( this.isPlaying ) return
       this.isPlaying = true
 
-      const freq = this.calculateFrequency( event )
-      this.setFrequency( freq )
+      this.$refs.tracker.preserveLast()
+      this.$refs.tracker.touches.push( this.calculateTouch( event ) )
 
-      const vol = this.calculateVolume( event )
-      const delay = 0.01
-      this.gain.gain.exponentialRampToValueAtTime( vol, this.audioCtx.currentTime + delay )
+      const freq = this.calculateFrequency( event )
+      this.synth.triggerAttack( freq )
+
+      this.synth.volume.value = this.calculateVolume( event )
     },
     upEventListener( event ) {
-      if ( !this.isPlaying ) {
-        return
-      }
-
       this.isPlaying = false
-      const val = 0.0001
-      const delay = 0.01
-      this.gain.gain.exponentialRampToValueAtTime( val, this.audioCtx.currentTime + delay )
+      this.$refs.tracker.releaseLast()
+      this.synth.triggerRelease()
     },
     moveEventListener( event ) {
-      if ( this.isPlaying ) {
-        this.setFrequency( this.calculateFrequency( event ) )
-        this.setVolume( this.calculateVolume( event ) )
-      }
-    },
-    setFrequency( value ) {
-      this.oscillator.frequency.value = value
+      if ( !this.isPlaying ) return
+      this.$refs.tracker.touches.push( this.calculateTouch( event ) )
+      this.synth.frequency.value = this.calculateFrequency( event )
+      this.synth.volume.value = this.calculateVolume( event )
     },
     calculateFrequency( event ) {
-      const x = event.type.match( "mouse" )
-        ? event.clientX
-        : event.touches[ "0" ].clientX
-      // eslint-disable-next-line no-magic-numbers
+      const x = event.type.match( "mouse" ) ? event.clientX : event.touches[ 0 ].clientX
+
       const middleSize = this.$refs.theremin.offsetWidth / 2
-      // eslint-disable-next-line no-magic-numbers
       const octaveScalingFactor = this.numberOfNotesInOctave * 2
 
       const val = ( x - middleSize ) * octaveScalingFactor / middleSize
       const magicNumber = 1.059463094359295264
       return this.currentMidFrequency * Math.pow( magicNumber, val )
     },
-    setVolume( value ) {
-      this.gain.gain.setValueAtTime( value, this.audioCtx.currentTime )
-    },
     calculateVolume( event ) {
-      const y = event.type.match( "mouse" )
-        ? event.clientY
-        : event.touches[ "0" ].clientY
-      // eslint-disable-next-line no-magic-numbers
-      return 1 - Math.min( 1, Math.max( 0, ( y / this.$refs.theremin.offsetHeight ) ) )
+      const y = event.type.match( "mouse" ) ? event.clientY : event.touches[ 0 ].clientY
+
+      return this.volumeConfig.max -
+        Math.min( 1, Math.max( 0, ( y / this.$refs.theremin.offsetHeight ) ) ) * this.volumeConfig.diff
     },
-  },
-  computed: {
-    ...mapState( [
-      "notes",
-      "frequencies",
-      "keys",
-      "numberOfMajorNotesInOctave",
-      "numberOfNotesInOctave",
-      "octaveOffsetOptions",
-      "oscillatorTypes",
-      "modes",
-    ] ),
-    minIndex() {
-      return this.numberOfNotesInOctave * this.octaveOffset
-    },
-    maxIndex() {
-      return this.numberOfNotesInOctave * ( this.octaveOffset + this.keys.length / this.numberOfMajorNotesInOctave )
-    },
-    currentMidFrequency() {
-      // eslint-disable-next-line no-magic-numbers
-      const midIndex = ( this.minIndex + this.maxIndex ) / 2
-      return this.frequencies[ midIndex ]
-    },
-    backgroundColor() {
-      return this.defBgColor
-      // // eslint-disable-next-line no-magic-numbers
-      // const beg = this.$refs.rain.ELEMENT_WIDTH * 0
-      // // eslint-disable-next-line no-magic-numbers
-      // const mid = this.$refs.rain.ELEMENT_WIDTH * 1
-      // // eslint-disable-next-line no-magic-numbers
-      // const end = this.$refs.rain.ELEMENT_WIDTH * 2
-      // console.log( beg, mid, end )
-      // return `repeating-linear-gradient(
-      //   to right,
-      //   var(--main-bg-color) ${beg}px,
-      //   var(--main-bg-color) ${mid}px,
-      //   var(--main-color) ${mid}px,
-      //   var(--main-color) ${end}px
-      // )`
-    },
-  },
-  watch: {
-    oscillatorType( val ) {
-      this.oscillator.type = val
+    calculateTouch( event ) {
+      return {
+        x: event.type.match( "mouse" ) ? event.clientX : event.touches[ 0 ].clientX,
+        y: event.type.match( "mouse" ) ? event.clientY : event.touches[ 0 ].clientY,
+        t: performance.now(),
+      }
     },
   },
 }
@@ -249,12 +224,9 @@ export default {
       font-weight bold
       z-index 1
 
-  #matrix-rain
-    position absolute
-    height 100%
-    width 100%
-
-  #overlay
+  #matrix-rain,
+  #overlay,
+  #touch-tracker
     position absolute
     height 100%
     width 100%

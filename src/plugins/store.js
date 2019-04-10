@@ -27,9 +27,9 @@ const store = new Vuex.Store( {
     keyMap: [ 0, 2, 4, 5, 7, 9, 11, ],
     numberOfMajorNotesInOctave: 7,
     numberOfNotesInOctave: 12,
-    octaveOffsetOptions: [ 0, 1, 2, 3, 4, 5, ],
     modes: [ "synthesizer", "theremin", ],
     oscillatorTypes: [ "sine", "square", "sawtooth", "triangle", ],
+    octaveOffsets: [ 0, 1, 2, 3, 4, 5, ],
   },
   /* eslint-enable no-magic-numbers */
 } )
