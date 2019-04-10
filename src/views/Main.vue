@@ -37,7 +37,7 @@
       <span class="underButton">
         On smaller devices landscape fullscreen is advised
         <br>
-        By pressing START button you accept <a href="http://bit.ly/loolzToS">Terms of Service</a>
+        By pressing START button you accept <a href="https://bit.ly/loolzToS">Terms of Service</a>
       </span>
     </div>
   </div>
