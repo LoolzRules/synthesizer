@@ -70,7 +70,9 @@ export default {
 
       this.gCtx.textBaseline = "middle"
       this.gCtx.textAlign = "center"
-      this.gCtx.font = `bold ${this.ELEMENT_SIZE * this.LETTER_SCALING}px Courier`
+      const font = getComputedStyle( document.documentElement )
+        .getPropertyValue( "--font" )
+      this.gCtx.font = `bold ${this.ELEMENT_SIZE * this.LETTER_SCALING}px ${font}`
     },
     initRain() {
       const origin = 0
@@ -145,6 +147,11 @@ export default {
       this.gCtx.shadowColor = col
       this.gCtx.fillStyle = col
       this.gCtx.fillText( l, x, y )
+    },
+    resize() {
+      if ( this.animID ) window.cancelAnimationFrame( this.animID )
+      this.init()
+      this.initRain()
     },
   },
 }

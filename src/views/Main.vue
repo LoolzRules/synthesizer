@@ -16,13 +16,29 @@
             </option>
           </select>
         </label>
+        <!--TODO: better fullscreen toggle-->
+        <label>
+          <span class="label">Fullscreen:</span>
+          <select v-model="sMode">
+            <option v-for="( option, index ) in sModes"
+                    :key="index"
+                    :value="!!index">
+              {{ option }}
+            </option>
+          </select>
+        </label>
       </div>
       <loading-screen id="loading-screen" v-if="loading"/>
     </template>
     <div v-else id="start-overlay">
-      <span>{{finalMessage}}</span>
+      <span class="overButton">{{finalMessage}}</span>
       <input type="button" value="start"
              @click="startAudioContext"/>
+      <span class="underButton">
+        On smaller devices landscape fullscreen is advised
+        <br>
+        By pressing START button you accept <a href="http://bit.ly/loolzToS">Terms of Service</a>
+      </span>
     </div>
   </div>
 </template>
@@ -33,6 +49,7 @@ import LoadingScreen from "../components/LoadingScreen"
 import Synthesizer from "../components/Synthesizer"
 import Theremin from "../components/Theremin"
 import Tone from "tone"
+import screenfull from "screenfull"
 
 export default {
   components: {
@@ -44,10 +61,11 @@ export default {
     return {
       message: null,
       prevTime: -Infinity,
-      typeDelay: 100,
+      typeDelay: 50,
       finalMessage: null,
-      ctx: null,
       mode: null,
+      sMode: null,
+      sModes: [ "off", "on", ],
       loading: null,
       started: null,
       initTimeout: 1000,
@@ -62,15 +80,25 @@ export default {
     mode() {
       this.showLoadingScreen()
     },
+    sMode( isOn ) {
+      if ( screenfull.enabled ) {
+        if ( isOn ) {
+          screenfull.request()
+        } else {
+          screenfull.exit()
+        }
+      }
+    },
   },
   beforeMount() {
     this.started = false
 
     const modeChoice = 0
     this.mode = this.modes[ modeChoice ]
+    this.sMode = false
   },
   mounted() {
-    this.message = "My name is Loolz\nWelcome to my music app"
+    this.message = "Hello, my name is Loolz\nWelcome to my music app"
     this.finalMessage = ""
     this.typeLetter( this.prevTime, 0 )
   },
@@ -82,9 +110,7 @@ export default {
       this.loading = true
     },
     startAudioContext() {
-      this.ctx = new AudioContext()
-      this.ctx.resume()
-      Tone.setContext( this.ctx )
+      Tone.context.resume()
       this.started = true
     },
     typeLetter( time, ind ) {
@@ -115,6 +141,7 @@ export default {
     --main-rgb m
     --main-bg-color rgb(mbg)
     --main-color rgb(m)
+    --font "Courier New"
 
   input[type=range]
     trackHeight = .5em
@@ -229,20 +256,21 @@ export default {
         background-color var(--main-color)
 
   #main
+    position relative
     height 100vh
     width 100vw
     display flex
     flex-direction column
     justify-content stretch
-    font-family Courier, serif
+    font-family var(--font), serif
     color var(--main-color)
     background-color var(--main-bg-color)
 
   #mode
     position absolute
-    top 0
+    bottom 0
     right 0
-    padding 4px
+    padding 0.5em
     box-sizing border-box
     background-color var(--main-bg-color)
     border 2px solid var(--main-color)
@@ -268,8 +296,14 @@ export default {
 
   #loading-screen
     position absolute
-    height 100%
-    width 100%
+    top 50vh
+    left 50vw
+    margin-top -50vh
+    margin-left -50vw
+
+    height 100vh
+    width 100vw
+
     display flex
     align-items center
     justify-content center
@@ -281,21 +315,28 @@ export default {
 
   #start-overlay
     position absolute
+    box-sizing border-box
     height 100%
     width 100%
+    padding 1em
     display flex
     flex-direction column
     align-items center
-    justify-content center
+    justify-content space-around
     background-color var(--main-bg-color)
 
-    & > span
-      height 2em
-      margin-bottom 2em
-      font-size 1.5em
+    & > .overButton
+      height 3em
+      font-size 1.25em
       font-weight bold
+      line-height 1.5em
       text-align center
       white-space pre-wrap
+
+    & > .underButton
+      font-size 1em
+      line-height 1.5em
+      text-align center
 
     & > input[type=button]
       font-size 2em

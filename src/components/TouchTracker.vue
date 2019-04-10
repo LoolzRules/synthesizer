@@ -16,19 +16,22 @@ export default {
     }
   },
   mounted() {
-    this.$refs.tracker.height = this.$refs.tracker.offsetHeight
-    this.$refs.tracker.width = this.$refs.tracker.offsetWidth
-
-    this.gCtx = this.$refs.tracker.getContext( "2d" )
-    this.gCtx.fillStyle = "rgba(0, 255, 0, 0.25)"
-
-    this.touches = []
-    this.update()
+    this.init()
   },
   beforeDestroy() {
     if ( this.animID ) window.cancelAnimationFrame( this.animID )
   },
   methods: {
+    init() {
+      this.$refs.tracker.height = this.$refs.tracker.offsetHeight
+      this.$refs.tracker.width = this.$refs.tracker.offsetWidth
+
+      this.gCtx = this.$refs.tracker.getContext( "2d" )
+      this.gCtx.fillStyle = "rgba(0, 255, 0, 0.5)"
+
+      this.touches = []
+      this.update()
+    },
     update( time ) {
       this.gCtx.clearRect( 0, 0, this.$refs.tracker.width, this.$refs.tracker.height )
 
@@ -60,6 +63,10 @@ export default {
     },
     releaseLast() {
       this.lastTouchIsPreserved = false
+    },
+    resize() {
+      if ( this.animID ) window.cancelAnimationFrame( this.animID )
+      this.init()
     },
   },
 }

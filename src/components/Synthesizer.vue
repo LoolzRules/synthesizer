@@ -31,7 +31,7 @@
           </select>
         </label>
         <label>
-          <span class="label">Choose octave to start from:</span>
+          <span class="label">First octave:</span>
           <select v-model="octaveOffset">
             <option v-for="option in octaveOffsets"
                     :key="option"
@@ -39,6 +39,13 @@
               {{ option }}
             </option>
           </select>
+        </label>
+        <label>
+          <span class="label">Volume: {{ volumeConfig.curr }}</span>
+          <input id="volume" type="range"
+                 v-model="volumeConfig.curr"
+                 :min="volumeConfig.min"
+                 :max="volumeConfig.max">
         </label>
       </div>
     </div>
@@ -60,6 +67,11 @@ export default {
       touchedNoteIndices: null,
       keyWidth: null,
       keyHeight: null,
+      volumeConfig: {
+        max: 20,
+        min: -30,
+        curr: 0,
+      },
     }
   },
   computed: {
@@ -92,6 +104,12 @@ export default {
     oscillatorType() {
       this.resetOscillators()
     },
+    volumeConfig: {
+      handler( vol ) {
+        Tone.context.master.volume.value = vol.curr
+      },
+      deep: true,
+    },
   },
   mounted() {
     const initialChoice = 0
@@ -109,6 +127,7 @@ export default {
     window.addEventListener( "keyup", this.keyUpListener )
   },
   beforeDestroy() {
+    Tone.context.master.volume.value = 0
     this.synths.forEach( synth => {
       synth.dispose()
     } )
@@ -146,12 +165,6 @@ export default {
       const LMB_CODE = 1
       if ( event.buttons === LMB_CODE ) this.stopNote( ind )
     },
-    playNote( index ) {
-      this.synths[ index ].triggerAttack( this.$refs.keys[ index ].dataset.note, "+0.05" )
-    },
-    stopNote( index ) {
-      this.synths[ index ].triggerRelease()
-    },
     touchStartListener( event ) {
       let coordinates = []
       for ( let i = 0; i < event.changedTouches.length; i++ ) {
@@ -187,6 +200,7 @@ export default {
       } )
     },
     touchMoveListener( event ) {
+      // event.preventDefault()
       let coordinates = []
       for ( let i = 0; i < event.touches.length; i++ ) {
         coordinates.push( {
@@ -212,9 +226,11 @@ export default {
         ...toAppend,
       ]
     },
-    switchControls() {
-      console.log( this.displayControls )
-      this.displayControls = this.displayControls ? null : "none"
+    playNote( index ) {
+      this.synths[ index ].triggerAttack( this.$refs.keys[ index ].dataset.note, "+0.05" )
+    },
+    stopNote( index ) {
+      this.synths[ index ].triggerRelease()
     },
     resetOscillators() {
       if ( !this.synths || this.synths.includes( null ) ) return
@@ -254,6 +270,10 @@ export default {
         setTimeout( this.$parent.hideLoadingScreen, this.$parent.initTimeout )
       }
     },
+    switchControls() {
+      console.log( this.displayControls )
+      this.displayControls = this.displayControls ? null : "none"
+    },
   },
 }
 </script>
@@ -266,27 +286,29 @@ export default {
     flex-direction column
 
   #synthesizer
-    height 75%
     width 100%
     box-sizing border-box
     flex 1 1 auto
+
     display flex
     flex-wrap wrap
+
     border 1px solid var(--main-color)
+    cursor pointer
 
     & > .key
       height 25%
       width 8.3333%
       flex 1 1 auto
       box-sizing border-box
+
       display flex
       align-items center
       justify-content center
+
       border 1px solid var(--main-color)
       font-size 1.25em
       font-weight bold
-      user-select none
-      cursor pointer
 
   #lastPlayed
     box-sizing border-box

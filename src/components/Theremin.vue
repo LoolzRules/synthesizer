@@ -5,24 +5,13 @@
       <matrix-rain id="matrix-rain" ref="rain"/>
       <div id="overlay" :style="{
         opacity: opacity.value/100,
-        backgroundColor,
       }"></div>
       <touch-tracker id="touch-tracker" ref="tracker"/>
     </div>
     <div id="info">
       <div id="controls">
         <label>
-          <span class="label">Choose octave to start from:</span>
-          <select v-model="octaveOffset">
-            <option v-for="option in octaveOffsets"
-                    :key="option"
-                    :value="option">
-              {{ option }}
-            </option>
-          </select>
-        </label>
-        <label>
-          <span class="label">Choose type of sound:</span>
+          <span class="label">Oscillator type:</span>
           <select v-model="oscillatorType">
             <option v-for="( option, index ) in oscillatorTypes"
                     :key="index"
@@ -32,7 +21,17 @@
           </select>
         </label>
         <label>
-          <span class="label">Background opacity: {{ (opacity.value/opacity.max).toFixed(2) }}</span>
+          <span class="label">First octave:</span>
+          <select v-model="octaveOffset">
+            <option v-for="option in octaveOffsets"
+                    :key="option"
+                    :value="option">
+              {{ option }}
+            </option>
+          </select>
+        </label>
+        <label>
+          <span class="label">BG opacity: {{ (opacity.value/opacity.max).toFixed(2) }}</span>
           <input id="volume" type="range"
                  v-model="opacity.value"
                  :min="opacity.min"
@@ -68,12 +67,10 @@ export default {
         max: 100,
       },
       volumeConfig: {
-        max: 10,
-        min: -40,
+        max: 20,
+        min: -30,
         diff: 50,
       },
-      backgroundColor: getComputedStyle( document.documentElement )
-        .getPropertyValue( "--main-bg-color" ),
     }
   },
   computed: {
@@ -106,6 +103,8 @@ export default {
     },
   },
   mounted() {
+    Tone.context.master.volume.value = 0
+
     const initialChoice = 0
     this.oscillatorType = this.oscillatorTypes[ initialChoice ]
     this.octaveOffset = this.octaveOffsets[ initialChoice ]
@@ -129,6 +128,8 @@ export default {
     this.$refs.theremin.addEventListener( "touchend", this.upEventListener, false )
     this.$refs.theremin.addEventListener( "touchmove", this.moveEventListener, false )
 
+    window.addEventListener( "resize", this.resizeCanvases, true )
+
     setTimeout( this.$parent.hideLoadingScreen, this.$parent.initTimeout )
   },
   beforeDestroy() {
@@ -142,6 +143,8 @@ export default {
     this.$refs.theremin.removeEventListener( "touchstart", this.downEventListener, false )
     this.$refs.theremin.removeEventListener( "touchend", this.upEventListener, false )
     this.$refs.theremin.removeEventListener( "touchmove", this.moveEventListener, false )
+
+    window.removeEventListener( "resize", this.resizeCanvases, true )
   },
   methods: {
     downEventListener( event ) {
@@ -163,6 +166,7 @@ export default {
     },
     moveEventListener( event ) {
       if ( !this.isPlaying ) return
+      // event.preventDefault()
       this.$refs.tracker.touches.push( this.calculateTouch( event ) )
       this.synth.frequency.value = this.calculateFrequency( event )
       this.synth.volume.value = this.calculateVolume( event )
@@ -190,6 +194,10 @@ export default {
         t: performance.now(),
       }
     },
+    resizeCanvases() {
+      this.$refs.rain.resize()
+      this.$refs.tracker.resize()
+    },
   },
 }
 </script>
@@ -204,16 +212,15 @@ export default {
 
   #theremin
     position relative
-    box-sizing border-box
-    height 100%
     width 100%
+    box-sizing border-box
+    flex 1 1 auto
 
     display flex
     align-items center
     justify-content center
 
     border 2px solid var(--main-color)
-    user-select none
     cursor pointer
 
     & > span
@@ -229,4 +236,7 @@ export default {
     position absolute
     height 100%
     width 100%
+
+  #overlay
+    background-color var(--main-bg-color)
 </style>
