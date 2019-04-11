@@ -6,6 +6,13 @@ Vue.use( Vuex )
 const store = new Vuex.Store( {
   /* eslint-disable no-magic-numbers */
   state: {
+    colorSchemes: {
+      "w&b": [ 0xffffff, 0x000000, ],
+      "b&w": [ 0x000000, 0xffffff, ],
+      "pinky": [ 0xff1493, 0x000000, ],
+      "matrix": [ 0x00ff00, 0x000000, ],
+    },
+    chosenColorScheme: null,
     notes: [ "C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B", ],
     frequencies: [
       16.35, 17.32, 18.35, 19.45, 20.60, 21.83, 23.12, 24.50, 25.96, 27.50, 29.14, 30.87,
@@ -18,11 +25,11 @@ const store = new Vuex.Store( {
       2093, 2217, 2349, 2489, 2637, 2794, 2960, 3136, 3322, 3520, 3729, 3951,
       4186, 4435, 4699, 4978, 5274, 5588, 5920, 6272, 6645, 7040, 7459, 7902,
     ],
-    keys: [
-      "1", "2", "3", "4", "5", "6", "7",
-      "q", "w", "e", "r", "t", "y", "u",
-      "a", "s", "d", "f", "g", "h", "j",
-      "z", "x", "c", "v", "b", "n", "m",
+    keyCodes: [
+      "Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6", "Digit7",
+      "KeyQ", "KeyW", "KeyE", "KeyR", "KeyT", "KeyY", "KeyU",
+      "KeyA", "KeyS", "KeyD", "KeyF", "KeyG", "KeyH", "KeyJ",
+      "KeyZ", "KeyX", "KeyC", "KeyV", "KeyB", "KeyN", "KeyM",
     ],
     keyMap: [ 0, 2, 4, 5, 7, 9, 11, ],
     numberOfMajorNotesInOctave: 7,
@@ -30,6 +37,11 @@ const store = new Vuex.Store( {
     modes: [ "synthesizer", "theremin", ],
     oscillatorTypes: [ "sine", "square", "sawtooth", "triangle", ],
     octaveOffsets: [ 0, 1, 2, 3, 4, 5, ],
+  },
+  mutations: {
+    updateColorScheme( state, index ) {
+      state.chosenColorScheme = index
+    },
   },
   /* eslint-enable no-magic-numbers */
 } )

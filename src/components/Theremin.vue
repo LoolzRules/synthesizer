@@ -77,7 +77,7 @@ export default {
     ...mapState( [
       "notes",
       "frequencies",
-      "keys",
+      "keyCodes",
       "numberOfMajorNotesInOctave",
       "numberOfNotesInOctave",
       "oscillatorTypes",
@@ -88,7 +88,7 @@ export default {
       return this.numberOfNotesInOctave * this.octaveOffset
     },
     maxIndex() {
-      return this.numberOfNotesInOctave * ( this.octaveOffset + this.keys.length / this.numberOfMajorNotesInOctave ) - 1
+      return this.numberOfNotesInOctave * ( this.octaveOffset + this.keyCodes.length / this.numberOfMajorNotesInOctave ) - 1
     },
     currentMidFrequency() {
       const midIndex = ( this.minIndex + this.maxIndex ) / 2
@@ -239,4 +239,5 @@ export default {
 
   #overlay
     background-color var(--main-bg-color)
+
 </style>

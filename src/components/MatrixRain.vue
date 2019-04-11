@@ -3,6 +3,9 @@
 </template>
 
 <script>
+import { mapState, } from "vuex"
+import interpolateColors from "../utils/interpolateColors"
+
 export default {
   name: "matrix-rain",
   data() {
@@ -12,24 +15,6 @@ export default {
         "゠ァアィイゥウェエォオカガキギクグケゲコゴサザシジスズセゼソゾタダチヂッツヅテデトドナニヌネノハバパヒビピフブプヘベペホボポマミムメモャヤュユョヨラリルレロヮワヰヱヲンヴヵヶヷヸヹヺ・ーヽヾヿ",
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
         "0123456789",
-      ],
-      colors: [
-        "rgb(0, 255, 0)",
-        "rgb(0, 238, 0)",
-        "rgb(0, 221, 0)",
-        "rgb(0, 204, 0)",
-        "rgb(0, 187, 0)",
-        "rgb(0, 170, 0)",
-        "rgb(0, 153, 0)",
-        "rgb(0, 136, 0)",
-        "rgb(0, 119, 0)",
-        "rgb(0, 102, 0)",
-        "rgb(0, 85, 0)",
-        "rgb(0, 68, 0)",
-        "rgb(0, 51, 0)",
-        "rgb(0, 34, 0)",
-        "rgb(0, 17, 0)",
-        "rgb(0, 0, 0)",
       ],
       rainIndices: null,
       MAX_VALUE: 0,
@@ -44,6 +29,16 @@ export default {
       prevTime: null,
       animID: null,
     }
+  },
+  computed: {
+    ...mapState( [
+      "colorSchemes",
+      "chosenColorScheme",
+    ] ),
+    colors() {
+      // eslint-disable-next-line no-magic-numbers
+      return interpolateColors( ...this.colorSchemes[ this.chosenColorScheme ], 16 )
+    },
   },
   mounted() {
     this.init()

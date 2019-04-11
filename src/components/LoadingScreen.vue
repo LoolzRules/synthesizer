@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div id="loading-screen">
     <span>
       Loading{{dots}}
     </span>
@@ -34,4 +34,22 @@ export default {
 </script>
 
 <style lang="stylus">
+  #loading-screen
+    position absolute
+    top 50vh
+    left 50vw
+    margin-top -50vh
+    margin-left -50vw
+
+    height 100vh
+    width 100vw
+
+    display flex
+    align-items center
+    justify-content center
+    background-color var(--main-bg-color)
+
+    & > span
+      font-size 2em
+      font-weight bold
 </style>

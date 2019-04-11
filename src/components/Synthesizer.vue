@@ -78,7 +78,7 @@ export default {
     ...mapState( [
       "notes",
       "frequencies",
-      "keys",
+      "keyCodes",
       "keyMap",
       "numberOfMajorNotesInOctave",
       "numberOfNotesInOctave",
@@ -89,7 +89,7 @@ export default {
       return this.numberOfNotesInOctave * this.octaveOffset
     },
     maxIndex() {
-      return this.numberOfNotesInOctave * ( this.octaveOffset + this.keys.length / this.numberOfMajorNotesInOctave ) - 1
+      return this.numberOfNotesInOctave * ( this.octaveOffset + this.keyCodes.length / this.numberOfMajorNotesInOctave ) - 1
     },
     currentFrequencies() {
       return this.frequencies.filter( ( el, i ) => i >= this.minIndex && i <= this.maxIndex )
@@ -118,7 +118,7 @@ export default {
 
     this.touchedNoteIndices = []
     this.keyWidth = this.$refs.synthesizer.offsetWidth / this.numberOfNotesInOctave
-    this.keyHeight = this.$refs.synthesizer.offsetHeight / ( this.keys.length / this.numberOfMajorNotesInOctave )
+    this.keyHeight = this.$refs.synthesizer.offsetHeight / ( this.keyCodes.length / this.numberOfMajorNotesInOctave )
 
     this.synths = new Array( this.currentFrequencies.length ).fill( null )
     this.makeSynths( 0 )
@@ -136,7 +136,7 @@ export default {
   },
   methods: {
     keyDownListener( event ) {
-      const index = this.keys.indexOf( event.key )
+      const index = this.keyCodes.indexOf( event.code )
       const NOT_FOUND_INDEX = -1
       if ( index === NOT_FOUND_INDEX ) return
 
@@ -148,7 +148,7 @@ export default {
       this.playNote( newIndex )
     },
     keyUpListener( event ) {
-      const index = this.keys.indexOf( event.key )
+      const index = this.keyCodes.indexOf( event.code )
       const NOT_FOUND_INDEX = -1
       if ( index === NOT_FOUND_INDEX ) return
 
@@ -227,7 +227,7 @@ export default {
       ]
     },
     playNote( index ) {
-      this.synths[ index ].triggerAttack( this.$refs.keys[ index ].dataset.note, "+0.05" )
+      this.synths[ index ].triggerAttack( this.$refs.keys[ index ].dataset.note )
     },
     stopNote( index ) {
       this.synths[ index ].triggerRelease()

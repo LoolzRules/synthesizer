@@ -3,6 +3,9 @@
 </template>
 
 <script>
+import { mapState, } from "vuex"
+import hexToRGBA from "../utils/hexToRGBA"
+
 export default {
   name: "touch-tracker",
   data() {
@@ -11,9 +14,21 @@ export default {
       touches: null,
       DURATION: 500,
       RAD: 25,
+      TOUCH_TRANSPARENCY: 0.5,
       animID: null,
       lastTouchIsPreserved: null,
     }
+  },
+  computed: {
+    ...mapState( [
+      "colorSchemes",
+      "chosenColorScheme",
+    ] ),
+  },
+  watch: {
+    chosenColorScheme( val ) {
+      this.gCtx.fillStyle = hexToRGBA( this.colorSchemes[ val ][ 0 ], this.TOUCH_TRANSPARENCY )
+    },
   },
   mounted() {
     this.init()
@@ -27,7 +42,10 @@ export default {
       this.$refs.tracker.width = this.$refs.tracker.offsetWidth
 
       this.gCtx = this.$refs.tracker.getContext( "2d" )
-      this.gCtx.fillStyle = "rgba(0, 255, 0, 0.5)"
+      this.gCtx.fillStyle = hexToRGBA(
+        this.colorSchemes[ this.chosenColorScheme ][ 0 ],
+        this.TOUCH_TRANSPARENCY
+      )
 
       this.touches = []
       this.update()
