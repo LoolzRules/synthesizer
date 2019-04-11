@@ -70,6 +70,7 @@ export default {
       loading: null,
       started: null,
       settingsDisplay: null,
+      showTimeout: 1000,
     }
   },
   computed: {

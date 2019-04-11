@@ -130,7 +130,7 @@ export default {
 
     window.addEventListener( "resize", this.resizeCanvases, true )
 
-    setTimeout( this.$parent.hideLoadingScreen, this.$parent.initTimeout )
+    setTimeout( this.$parent.hideLoadingScreen, this.$parent.showTimeout )
   },
   beforeDestroy() {
     try {

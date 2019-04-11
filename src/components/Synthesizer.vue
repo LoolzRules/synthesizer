@@ -267,7 +267,7 @@ export default {
         } ).toMaster()
         window.requestAnimationFrame( () => this.makeSynths( ind + 1 ) )
       } else {
-        setTimeout( this.$parent.hideLoadingScreen, this.$parent.initTimeout )
+        setTimeout( this.$parent.hideLoadingScreen, this.$parent.showTimeout )
       }
     },
     switchControls() {
