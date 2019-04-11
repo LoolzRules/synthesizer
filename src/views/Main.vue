@@ -70,7 +70,7 @@ export default {
       loading: null,
       started: null,
       settingsDisplay: null,
-      showTimeout: 1000,
+      hideTimeout: 1000,
     }
   },
   computed: {
@@ -119,6 +119,9 @@ export default {
     this.sMode = false
   },
   methods: {
+    scheduleHideLoadingScreen() {
+      setTimeout( this.hideLoadingScreen, this.hideTimeout )
+    },
     hideLoadingScreen() {
       this.loading = false
     },

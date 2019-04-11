@@ -267,12 +267,8 @@ export default {
         } ).toMaster()
         window.requestAnimationFrame( () => this.makeSynths( ind + 1 ) )
       } else {
-        setTimeout( this.$parent.hideLoadingScreen, this.$parent.showTimeout )
+        this.$parent.scheduleHideLoadingScreen()
       }
-    },
-    switchControls() {
-      console.log( this.displayControls )
-      this.displayControls = this.displayControls ? null : "none"
     },
   },
 }
