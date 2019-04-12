@@ -28,6 +28,7 @@ export default {
       SHIFT_PROBABILITY: 0.5,
       prevTime: null,
       animID: null,
+      hasJustChanged: null,
     }
   },
   computed: {
@@ -38,6 +39,11 @@ export default {
     colors() {
       // eslint-disable-next-line no-magic-numbers
       return interpolateColors( ...this.colorSchemes[ this.chosenColorScheme ], 16 )
+    },
+  },
+  watch: {
+    colors() {
+      this.hasJustChanged = true
     },
   },
   mounted() {
@@ -70,13 +76,7 @@ export default {
       this.gCtx.font = `bold ${this.ELEMENT_SIZE * this.LETTER_SCALING}px ${font}`
     },
     initRain() {
-      const origin = 0
-      this.placeRectangle(
-        this.selectLast( this.colors ),
-        origin, origin,
-        this.$refs.matrixRain.width,
-        this.$refs.matrixRain.height
-      )
+      this.hasJustChanged = true
 
       for ( let i = 0; i < this.rainIndices.length; i++ ) {
         this.rainIndices[ i ] = ( ( Math.random() * this.MAX_VALUE ) | 0 ) - this.MAX_VALUE
@@ -92,6 +92,17 @@ export default {
       }
 
       this.prevTime = time
+
+      if ( this.hasJustChanged ) {
+        this.hasJustChanged = false
+        const origin = 0
+        this.placeRectangle(
+          this.selectLast( this.colors ),
+          origin, origin,
+          this.$refs.matrixRain.width,
+          this.$refs.matrixRain.height
+        )
+      }
 
       for ( let i = 0; i < this.ROW_LENGTH; i++ ) {
         this.rainIndices[ i ] = ++this.rainIndices[ i ] % this.MAX_VALUE

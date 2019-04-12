@@ -7,9 +7,13 @@ const store = new Vuex.Store( {
   /* eslint-disable no-magic-numbers */
   state: {
     colorSchemes: {
-      "w&b": [ 0xffffff, 0x000000, ],
-      "b&w": [ 0x000000, 0xffffff, ],
-      "pinky": [ 0xff1493, 0x000000, ],
+      "standard": [ 0xffffff, 0x000000, ],
+      "paper": [ 0x000000, 0xffffff, ],
+      "yellow": [ 0x99ff00, 0x000000, ],
+      "orange": [ 0xff3300, 0x000000, ],
+      "pink": [ 0xff0066, 0x000000, ],
+      "mint": [ 0x00ff99, 0x000000, ],
+      "blue": [ 0x00ffff, 0x000000, ],
       "matrix": [ 0x00ff00, 0x000000, ],
     },
     chosenColorScheme: null,
