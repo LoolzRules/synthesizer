@@ -1,20 +1,26 @@
 import Vue from "vue"
 import Vuex from "vuex"
+import numToCol from "../utils/numToCol"
 
 Vue.use( Vuex )
 
+// TODO: add modules
+
+/* eslint-disable no-magic-numbers */
 const store = new Vuex.Store( {
-  /* eslint-disable no-magic-numbers */
   state: {
     colorSchemes: {
       "standard": [ 0xffffff, 0x000000, ],
-      "paper": [ 0x000000, 0xffffff, ],
       "yellow": [ 0x99ff00, 0x000000, ],
       "orange": [ 0xff3300, 0x000000, ],
       "pink": [ 0xff0066, 0x000000, ],
       "mint": [ 0x00ff99, 0x000000, ],
       "blue": [ 0x00ffff, 0x000000, ],
       "matrix": [ 0x00ff00, 0x000000, ],
+      "BSoD": [ 0xffffff, 0x000082, ],
+      "RSoD": [ 0xffffff, 0x820000, ],
+      "japan": [ 0xbc002d, 0xffffff, ],
+      "paper": [ 0x000000, 0xffffff, ],
     },
     chosenColorScheme: null,
     notes: [ "C", "C#", "D", "Eb", "E", "F", "F#", "G", "G#", "A", "Bb", "B", ],
@@ -41,13 +47,45 @@ const store = new Vuex.Store( {
     modes: [ "synthesizer", "theremin", ],
     oscillatorTypes: [ "sine", "square", "sawtooth", "triangle", ],
     octaveOffsets: [ 0, 1, 2, 3, 4, 5, ],
-  },
-  mutations: {
-    updateColorScheme( state, index ) {
-      state.chosenColorScheme = index
+    userSettings: {
+      colorScheme: null,
+      mode: null,
+      synthesizerOscillatorType: null,
+      synthesizerOctaveOffset: null,
+      synthesizerVolume: null,
+      thereminOscillatorType: null,
+      thereminOctaveOffset: null,
+      thereminBgOpacity: null,
     },
   },
-  /* eslint-enable no-magic-numbers */
+  mutations: {
+    colorScheme( state, index ) {
+      document.documentElement.style.setProperty( "--main-color", numToCol( state.colorSchemes[ index ][ 0 ] ) )
+      document.documentElement.style.setProperty( "--main-bg-color", numToCol( state.colorSchemes[ index ][ 1 ] ) )
+      state.userSettings.colorScheme = index
+    },
+    mode( state, mode ) {
+      state.userSettings.mode = mode
+    },
+    synthesizerOscillatorType( state, type ) {
+      state.userSettings.synthesizerOscillatorType = type
+    },
+    synthesizerOctaveOffset( state, offset ) {
+      state.userSettings.synthesizerOctaveOffset = +offset
+    },
+    synthesizerVolume( state, vol ) {
+      state.userSettings.synthesizerVolume = +vol
+    },
+    thereminOscillatorType( state, type ) {
+      state.userSettings.thereminOscillatorType = type
+    },
+    thereminOctaveOffset( state, offset ) {
+      state.userSettings.thereminOctaveOffset = +offset
+    },
+    thereminBgOpacity( state, val ) {
+      state.userSettings.thereminBgOpacity = +val
+    },
+  },
 } )
 
 export default store

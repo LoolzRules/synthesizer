@@ -32,10 +32,10 @@ export default {
     }
   },
   computed: {
-    ...mapState( [
-      "colorSchemes",
-      "chosenColorScheme",
-    ] ),
+    ...mapState( {
+      colorSchemes: "colorSchemes",
+      chosenColorScheme: state => state.userSettings.colorScheme,
+    } ),
     colors() {
       // eslint-disable-next-line no-magic-numbers
       return interpolateColors( ...this.colorSchemes[ this.chosenColorScheme ], 16 )

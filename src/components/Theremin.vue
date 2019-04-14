@@ -4,7 +4,7 @@
     <div id="theremin" ref="theremin">
       <matrix-rain id="matrix-rain" ref="rain"/>
       <div id="overlay" :style="{
-        opacity: opacity.value/100,
+        opacity: opacity/100,
       }"></div>
       <touch-tracker id="touch-tracker" ref="tracker"/>
     </div>
@@ -31,11 +31,13 @@
           </select>
         </label>
         <label>
-          <span class="label">BG opacity: {{ (opacity.value/opacity.max).toFixed(2) }}</span>
+          <span class="label">
+            BG opacity: {{ (opacity/(opacityConfig.max - opacityConfig.min)).toFixed(2) }}
+          </span>
           <input id="volume" type="range"
-                 v-model="opacity.value"
-                 :min="opacity.min"
-                 :max="opacity.max">
+                 v-model="opacity"
+                 :min="opacityConfig.min"
+                 :max="opacityConfig.max">
         </label>
       </div>
     </div>
@@ -59,10 +61,7 @@ export default {
       isPlaying: false,
       synth: null,
       volume: null,
-      octaveOffset: null,
-      oscillatorType: null,
-      opacity: {
-        value: 100,
+      opacityConfig: {
         min: 0,
         max: 100,
       },
@@ -84,6 +83,30 @@ export default {
       "octaveOffsets",
       "modes",
     ] ),
+    oscillatorType: {
+      get() {
+        return this.$store.state.userSettings.thereminOscillatorType
+      },
+      set( type ) {
+        this.$store.commit( "thereminOscillatorType", type )
+      },
+    },
+    octaveOffset: {
+      get() {
+        return this.$store.state.userSettings.thereminOctaveOffset
+      },
+      set( offset ) {
+        this.$store.commit( "thereminOctaveOffset", offset )
+      },
+    },
+    opacity: {
+      get() {
+        return this.$store.state.userSettings.thereminBgOpacity
+      },
+      set( opacity ) {
+        this.$store.commit( "thereminBgOpacity", opacity )
+      },
+    },
     minIndex() {
       return this.numberOfNotesInOctave * this.octaveOffset
     },
@@ -106,8 +129,16 @@ export default {
     Tone.context.master.volume.value = 0
 
     const initialChoice = 0
-    this.oscillatorType = this.oscillatorTypes[ initialChoice ]
-    this.octaveOffset = this.octaveOffsets[ initialChoice ]
+    const initialOpacity = 100
+    this.oscillatorType = this.oscillatorType
+      ? this.oscillatorType
+      : this.oscillatorTypes[ initialChoice ]
+    this.octaveOffset = this.octaveOffset
+      ? this.octaveOffset
+      : this.octaveOffsets[ initialChoice ]
+    this.opacity = this.opacity
+      ? this.opacity
+      : initialOpacity
 
     this.synth = new Tone.Synth( {
       oscillator: {

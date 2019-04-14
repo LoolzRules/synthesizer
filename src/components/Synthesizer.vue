@@ -41,9 +41,9 @@
           </select>
         </label>
         <label>
-          <span class="label">Volume: {{ volumeConfig.curr }}</span>
+          <span class="label">Volume: {{ volume }}</span>
           <input id="volume" type="range"
-                 v-model="volumeConfig.curr"
+                 v-model="volume"
                  :min="volumeConfig.min"
                  :max="volumeConfig.max">
         </label>
@@ -61,8 +61,6 @@ export default {
   data() {
     return {
       synths: null,
-      oscillatorType: null,
-      octaveOffset: null,
       displayControls: null,
       touchedNoteIndices: null,
       keyWidth: null,
@@ -70,7 +68,6 @@ export default {
       volumeConfig: {
         max: 20,
         min: -30,
-        curr: 0,
       },
     }
   },
@@ -85,6 +82,30 @@ export default {
       "oscillatorTypes",
       "octaveOffsets",
     ] ),
+    oscillatorType: {
+      get() {
+        return this.$store.state.userSettings.synthesizerOscillatorType
+      },
+      set( type ) {
+        this.$store.commit( "synthesizerOscillatorType", type )
+      },
+    },
+    octaveOffset: {
+      get() {
+        return this.$store.state.userSettings.synthesizerOctaveOffset
+      },
+      set( offset ) {
+        this.$store.commit( "synthesizerOctaveOffset", offset )
+      },
+    },
+    volume: {
+      get() {
+        return this.$store.state.userSettings.synthesizerVolume
+      },
+      set( vol ) {
+        this.$store.commit( "synthesizerVolume", vol )
+      },
+    },
     minIndex() {
       return this.numberOfNotesInOctave * this.octaveOffset
     },
@@ -104,17 +125,22 @@ export default {
     oscillatorType() {
       this.resetOscillators()
     },
-    volumeConfig: {
-      handler( vol ) {
-        Tone.context.master.volume.value = vol.curr
-      },
-      deep: true,
+    volume( vol ) {
+      Tone.context.master.volume.value = vol
     },
   },
   mounted() {
     const initialChoice = 0
-    this.oscillatorType = this.oscillatorTypes[ initialChoice ]
-    this.octaveOffset = this.octaveOffsets[ initialChoice ]
+    const initialVolume = 0
+    this.oscillatorType = this.oscillatorType
+      ? this.oscillatorType
+      : this.oscillatorTypes[ initialChoice ]
+    this.octaveOffset = this.octaveOffset
+      ? this.octaveOffset
+      : this.octaveOffsets[ initialChoice ]
+    this.volume = this.volume
+      ? this.volume
+      : initialVolume
 
     this.touchedNoteIndices = []
     this.keyWidth = this.$refs.synthesizer.offsetWidth / this.numberOfNotesInOctave

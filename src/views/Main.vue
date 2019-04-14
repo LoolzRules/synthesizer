@@ -35,7 +35,7 @@
           </label>
           <label class="checkbox-label">
             <span class="label">Fullscreen:</span>
-            <input type="checkbox" v-model="sMode">
+            <input type="checkbox" v-model="fullscreenMode">
             <span class="checkmark"></span>
           </label>
         </div>
@@ -54,7 +54,6 @@ import Theremin from "../components/Theremin"
 import { mapState, } from "vuex"
 import Tone from "tone"
 import screenfull from "screenfull"
-import numToCol from "../utils/numToCol"
 
 export default {
   components: {
@@ -65,8 +64,7 @@ export default {
   },
   data() {
     return {
-      mode: null,
-      sMode: null,
+      fullscreenMode: null,
       loading: null,
       started: null,
       settingsDisplay: null,
@@ -80,18 +78,18 @@ export default {
     ] ),
     chosenColorScheme: {
       get() {
-        return this.$store.state.chosenColorScheme
+        return this.$store.state.userSettings.colorScheme
       },
       set( i ) {
-        document.documentElement.style.setProperty(
-          "--main-color",
-          numToCol( this.colorSchemes[ i ][ 0 ] )
-        )
-        document.documentElement.style.setProperty(
-          "--main-bg-color",
-          numToCol( this.colorSchemes[ i ][ 1 ] )
-        )
-        this.$store.commit( "updateColorScheme", i )
+        this.$store.commit( "colorScheme", i )
+      },
+    },
+    mode: {
+      get() {
+        return this.$store.state.userSettings.mode
+      },
+      set( mode ) {
+        this.$store.commit( "mode", mode )
       },
     },
   },
@@ -99,7 +97,7 @@ export default {
     mode() {
       this.showLoadingScreen()
     },
-    sMode( isOn ) {
+    fullscreenMode( isOn ) {
       if ( screenfull.enabled ) {
         if ( isOn ) {
           screenfull.request()
@@ -112,11 +110,15 @@ export default {
   beforeMount() {
     this.settingsDisplay = true
     this.started = false
-    this.chosenColorScheme = Object.keys( this.colorSchemes )[ 0 ]
 
-    const modeChoice = 0
-    this.mode = this.modes[ modeChoice ]
-    this.sMode = false
+    this.chosenColorScheme = this.chosenColorScheme
+      ? this.chosenColorScheme
+      : Object.keys( this.colorSchemes )[ 0 ]
+    this.mode = this.mode
+      ? this.mode
+      : this.modes[ 0 ]
+
+    this.fullscreenMode = false
   },
   methods: {
     scheduleHideLoadingScreen() {

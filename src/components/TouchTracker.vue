@@ -20,10 +20,10 @@ export default {
     }
   },
   computed: {
-    ...mapState( [
-      "colorSchemes",
-      "chosenColorScheme",
-    ] ),
+    ...mapState( {
+      colorSchemes: "colorSchemes",
+      chosenColorScheme: state => state.userSettings.colorScheme,
+    } ),
   },
   watch: {
     chosenColorScheme( val ) {

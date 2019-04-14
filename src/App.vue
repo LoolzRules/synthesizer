@@ -10,6 +10,20 @@ export default {
   components: {
     Main,
   },
+  beforeMount() {
+    // Restore saved settings
+    for ( let mutation of Object.keys( this.$store._mutations ) ) {
+      const value = localStorage.getItem( mutation )
+      if ( value ) {
+        this.$store.commit( mutation, value )
+      }
+    }
+
+    // Save new settings
+    this.$store.subscribe( ( mutation, state ) => {
+      localStorage.setItem( mutation.type, mutation.payload )
+    } )
+  },
 }
 </script>
 
