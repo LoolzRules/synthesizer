@@ -1,6 +1,5 @@
 <template>
   <div id="theremin-wrap">
-
     <div id="theremin" ref="theremin">
       <matrix-rain id="matrix-rain" ref="rain"/>
       <div id="overlay" :style="{
@@ -73,45 +72,42 @@ export default {
     }
   },
   computed: {
-    ...mapState( [
-      "notes",
+    ...mapState( "theremin", [
       "frequencies",
-      "keyCodes",
-      "numberOfMajorNotesInOctave",
       "numberOfNotesInOctave",
       "oscillatorTypes",
       "octaveOffsets",
-      "modes",
+      "octaveRange",
     ] ),
     oscillatorType: {
       get() {
-        return this.$store.state.userSettings.thereminOscillatorType
+        return this.$store.state.theremin.oscillatorType
       },
       set( type ) {
-        this.$store.commit( "thereminOscillatorType", type )
+        this.$store.commit( "theremin/oscillatorType", type )
       },
     },
     octaveOffset: {
       get() {
-        return this.$store.state.userSettings.thereminOctaveOffset
+        return this.$store.state.theremin.octaveOffset
       },
       set( offset ) {
-        this.$store.commit( "thereminOctaveOffset", offset )
+        this.$store.commit( "theremin/octaveOffset", offset )
       },
     },
     opacity: {
       get() {
-        return this.$store.state.userSettings.thereminBgOpacity
+        return this.$store.state.theremin.bgOpacity
       },
       set( opacity ) {
-        this.$store.commit( "thereminBgOpacity", opacity )
+        this.$store.commit( "theremin/bgOpacity", opacity )
       },
     },
     minIndex() {
       return this.numberOfNotesInOctave * this.octaveOffset
     },
     maxIndex() {
-      return this.numberOfNotesInOctave * ( this.octaveOffset + this.keyCodes.length / this.numberOfMajorNotesInOctave ) - 1
+      return this.numberOfNotesInOctave * ( this.octaveOffset + this.octaveRange ) - 1
     },
     currentMidFrequency() {
       const midIndex = ( this.minIndex + this.maxIndex ) / 2
@@ -206,7 +202,7 @@ export default {
       const x = event.type.match( "mouse" ) ? event.clientX : event.touches[ 0 ].clientX
 
       const middleSize = this.$refs.theremin.offsetWidth / 2
-      const octaveScalingFactor = this.numberOfNotesInOctave * 2
+      const octaveScalingFactor = this.numberOfNotesInOctave * this.octaveRange / 2
 
       const val = ( x - middleSize ) * octaveScalingFactor / middleSize
       const magicNumber = 1.059463094359295264

@@ -20,13 +20,13 @@ export default {
     }
   },
   computed: {
-    ...mapState( {
-      colorSchemes: "colorSchemes",
-      chosenColorScheme: state => state.userSettings.colorScheme,
-    } ),
+    ...mapState( "app", [
+      "colorSchemes",
+      "colorScheme",
+    ] ),
   },
   watch: {
-    chosenColorScheme( val ) {
+    colorScheme( val ) {
       this.gCtx.fillStyle = hexToRGBA( this.colorSchemes[ val ][ 0 ], this.TOUCH_TRANSPARENCY )
     },
   },
@@ -43,7 +43,7 @@ export default {
 
       this.gCtx = this.$refs.tracker.getContext( "2d" )
       this.gCtx.fillStyle = hexToRGBA(
-        this.colorSchemes[ this.chosenColorScheme ][ 0 ],
+        this.colorSchemes[ this.colorScheme ][ 0 ],
         this.TOUCH_TRANSPARENCY
       )
 

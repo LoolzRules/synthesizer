@@ -20,7 +20,7 @@ export default {
     }
 
     // Save new settings
-    this.$store.subscribe( ( mutation, state ) => {
+    this.$store.subscribe( ( mutation ) => {
       localStorage.setItem( mutation.type, mutation.payload )
     } )
   },
@@ -150,6 +150,8 @@ export default {
 
     & > select
       box-sizing border-box
+      font-family var(--font)
+      font-size 100%
       color var(--main-color)
       background-color var(--main-bg-color)
       border 1px solid var(--main-color)

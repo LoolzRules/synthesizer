@@ -23,6 +23,7 @@ export default {
       finalMessage: null,
       blinkDelay: 1000,
       blinkRepeat: 3,
+      blinkTimeoutID: null,
       message: null,
       prevTime: -Infinity,
       typeDelay: 50,
@@ -32,10 +33,13 @@ export default {
   mounted() {
     this.message = "Hello, my name is Loolz\nWelcome to my music app"
     this.finalMessage = ""
-    setTimeout( () => {
+    this.blinkTimeoutID = setTimeout( () => {
       this.$refs.blinker.classList.remove( "blink" )
       this.typeLetter( this.prevTime, 0 )
     }, this.blinkDelay * this.blinkRepeat )
+  },
+  beforeDestroy() {
+    clearTimeout( this.blinkTimeoutID )
   },
   methods: {
     typeLetter( time, ind ) {

@@ -72,7 +72,7 @@ export default {
     }
   },
   computed: {
-    ...mapState( [
+    ...mapState( "synthesizer", [
       "notes",
       "frequencies",
       "keyCodes",
@@ -81,36 +81,37 @@ export default {
       "numberOfNotesInOctave",
       "oscillatorTypes",
       "octaveOffsets",
+      "octaveRange",
     ] ),
     oscillatorType: {
       get() {
-        return this.$store.state.userSettings.synthesizerOscillatorType
+        return this.$store.state.synthesizer.oscillatorType
       },
       set( type ) {
-        this.$store.commit( "synthesizerOscillatorType", type )
+        this.$store.commit( "synthesizer/oscillatorType", type )
       },
     },
     octaveOffset: {
       get() {
-        return this.$store.state.userSettings.synthesizerOctaveOffset
+        return this.$store.state.synthesizer.octaveOffset
       },
       set( offset ) {
-        this.$store.commit( "synthesizerOctaveOffset", offset )
+        this.$store.commit( "synthesizer/octaveOffset", offset )
       },
     },
     volume: {
       get() {
-        return this.$store.state.userSettings.synthesizerVolume
+        return this.$store.state.synthesizer.volume
       },
       set( vol ) {
-        this.$store.commit( "synthesizerVolume", vol )
+        this.$store.commit( "synthesizer/volume", vol )
       },
     },
     minIndex() {
       return this.numberOfNotesInOctave * this.octaveOffset
     },
     maxIndex() {
-      return this.numberOfNotesInOctave * ( this.octaveOffset + this.keyCodes.length / this.numberOfMajorNotesInOctave ) - 1
+      return this.numberOfNotesInOctave * ( this.octaveOffset + this.octaveRange ) - 1
     },
     currentFrequencies() {
       return this.frequencies.filter( ( el, i ) => i >= this.minIndex && i <= this.maxIndex )
@@ -144,7 +145,7 @@ export default {
 
     this.touchedNoteIndices = []
     this.keyWidth = this.$refs.synthesizer.offsetWidth / this.numberOfNotesInOctave
-    this.keyHeight = this.$refs.synthesizer.offsetHeight / ( this.keyCodes.length / this.numberOfMajorNotesInOctave )
+    this.keyHeight = this.$refs.synthesizer.offsetHeight / this.octaveRange
 
     this.synths = new Array( this.currentFrequencies.length ).fill( null )
     this.makeSynths( 0 )

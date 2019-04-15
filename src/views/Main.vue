@@ -5,6 +5,8 @@
           v-if="mode === modes[0]"/>
       <theremin
           v-if="mode === modes[1]"/>
+      <looper
+          v-if="mode === modes[2]"/>
       <div id="settings" :style="{ width: settingsDisplay ? null : '2em' }">
         <div id="toggle">
           <label class="checkbox-label">
@@ -25,7 +27,7 @@
           </label>
           <label>
             <span class="label">Color scheme:</span>
-            <select v-model="chosenColorScheme">
+            <select v-model="colorScheme">
               <option v-for="( option, index ) in Object.keys( colorSchemes )"
                       :key="index"
                       :value="option">
@@ -51,6 +53,7 @@ import StartOverlay from "../components/StartOverlay"
 import LoadingScreen from "../components/LoadingScreen"
 import Synthesizer from "../components/Synthesizer"
 import Theremin from "../components/Theremin"
+import Looper from "../components/Looper"
 import { mapState, } from "vuex"
 import Tone from "tone"
 import screenfull from "screenfull"
@@ -61,6 +64,7 @@ export default {
     LoadingScreen,
     Synthesizer,
     Theremin,
+    Looper,
   },
   data() {
     return {
@@ -72,24 +76,24 @@ export default {
     }
   },
   computed: {
-    ...mapState( [
+    ...mapState( "app", [
       "modes",
       "colorSchemes",
     ] ),
-    chosenColorScheme: {
+    colorScheme: {
       get() {
-        return this.$store.state.userSettings.colorScheme
+        return this.$store.state.app.colorScheme
       },
       set( i ) {
-        this.$store.commit( "colorScheme", i )
+        this.$store.commit( "app/colorScheme", i )
       },
     },
     mode: {
       get() {
-        return this.$store.state.userSettings.mode
+        return this.$store.state.app.mode
       },
       set( mode ) {
-        this.$store.commit( "mode", mode )
+        this.$store.commit( "app/mode", mode )
       },
     },
   },
@@ -111,8 +115,8 @@ export default {
     this.settingsDisplay = true
     this.started = false
 
-    this.chosenColorScheme = this.chosenColorScheme
-      ? this.chosenColorScheme
+    this.colorScheme = this.colorScheme
+      ? this.colorScheme
       : Object.keys( this.colorSchemes )[ 0 ]
     this.mode = this.mode
       ? this.mode
