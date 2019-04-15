@@ -36,6 +36,7 @@ export default {
 <style lang="stylus">
   #loading-screen
     position absolute
+    z-index 999
     top 50vh
     left 50vw
     margin-top -50vh

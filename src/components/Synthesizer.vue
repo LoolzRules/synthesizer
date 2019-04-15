@@ -41,7 +41,12 @@
           </select>
         </label>
         <label>
-          <span class="label">Volume: {{ volume }}</span>
+          <span class="label">
+            Volume:
+            <span class="rangeValue">
+              {{ volume }}
+            </span>
+          </span>
           <input id="volume" type="range"
                  v-model="volume"
                  :min="volumeConfig.min"
@@ -65,10 +70,6 @@ export default {
       touchedNoteIndices: null,
       keyWidth: null,
       keyHeight: null,
-      volumeConfig: {
-        max: 20,
-        min: -30,
-      },
     }
   },
   computed: {
@@ -82,6 +83,7 @@ export default {
       "oscillatorTypes",
       "octaveOffsets",
       "octaveRange",
+      "volumeConfig",
     ] ),
     oscillatorType: {
       get() {
@@ -254,9 +256,11 @@ export default {
       ]
     },
     playNote( index ) {
+      this.$refs.keys[ index ].classList.add( "played" )
       this.synths[ index ].triggerAttack( this.$refs.keys[ index ].dataset.note )
     },
     stopNote( index ) {
+      this.$refs.keys[ index ].classList.remove( "played" )
       this.synths[ index ].triggerRelease()
     },
     resetOscillators() {
@@ -334,10 +338,13 @@ export default {
       font-size 1.25em
       font-weight bold
 
-  #lastPlayed
-    box-sizing border-box
-    flex 1 1 auto
-    padding .5em
-    overflow auto
+      color var(--main-color)
+      background-color var(--main-bg-color)
+
+      transition color 0.5s ease 0s, background-color 0.5s ease 0s
+
+      &.played
+        color var(--main-bg-color)
+        background-color var(--main-color)
 
 </style>

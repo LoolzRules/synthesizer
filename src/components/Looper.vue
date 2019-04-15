@@ -1,6 +1,10 @@
 <template>
   <div id="looper-wrap">
     <div id="looper">
+      <matrix-rain id="matrix-rain" ref="rain"/>
+      <div id="overlay"
+           :style="{ opacity: opacity/100 }">
+      </div>
       <div class="tracks">
         <div v-for="( synth, si ) in this.poly" :key="si"
              class="track">
@@ -29,36 +33,57 @@
             </label>
           </div>
         </div>
+        <div class="buttons">
+          <input type="button" value="+"
+                 @click="addTrack"/>
+          <input type="button" value="►"
+                 @click="play"/>
+          <input type="button" value="■"
+                 @click="stop"/>
+        </div>
       </div>
     </div>
     <div id="info">
       <div id="controls">
         <label>
-          <span class="label">Tempo: {{ tempo }}</span>
-          <input id="volume" type="range"
+          <span class="label">
+            Tempo:
+            <span class="rangeValue">
+              {{ tempo }}
+            </span>
+          </span>
+          <input id="tempo" type="range"
                  v-model="tempo"
                  :min="tempoConfig.min"
                  :max="tempoConfig.max">
         </label>
-        <div>
-          <input type="button" value="add track"
-                 @click="addTrack"/>
-          <input type="button" value="play"
-                 @click="play"/>
-          <input type="button" value="stop"
-                 @click="stop"/>
-        </div>
+        <label>
+          <span class="label">
+            BG opacity:
+            <span class="rangeValue">
+              {{ (opacity/(opacityConfig.max - opacityConfig.min)).toFixed(2) }}
+            </span>
+          </span>
+          <input id="opacity" type="range"
+                 v-model="opacity"
+                 :min="opacityConfig.min"
+                 :max="opacityConfig.max">
+        </label>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import MatrixRain from "./MatrixRain"
 import { mapState, } from "vuex"
 import Tone from "tone"
 
 export default {
   name: "looper",
+  components: {
+    MatrixRain,
+  },
   data() {
     return {
       poly: [],
@@ -70,13 +95,23 @@ export default {
         max: 180,
         min: 60,
       },
+      noteDuration: "4n",
     }
   },
   computed: {
     ...mapState( "looper", [
       "notes",
       "octaves",
+      "opacityConfig",
     ] ),
+    opacity: {
+      get() {
+        return this.$store.state.looper.bgOpacity
+      },
+      set( opacity ) {
+        this.$store.commit( "looper/bgOpacity", opacity )
+      },
+    },
   },
   watch: {
     tempo() {
@@ -85,19 +120,32 @@ export default {
   },
   mounted() {
     this.tempo = Tone.Transport.bpm.value
+
+    const initialOpacity = 100
+    this.opacity = this.opacity
+      ? this.opacity
+      : initialOpacity
+
     this.addTrack()
     this.$parent.scheduleHideLoadingScreen()
+
+    window.addEventListener( "resize", this.resizeCallback, true )
+  },
+  beforeDestroy() {
+    window.removeEventListener( "resize", this.resizeCallback, true )
   },
   methods: {
     play() {
+      if ( Tone.Transport.state === "started" ) {
+        this.stop()
+      }
       const notes = this.synthNotes.map( note => `${note.note}${note.octave}` )
       this.poly.forEach( ( synth, ind ) => {
         this.beats[ ind ].forEach( ( beat, i ) => {
           if ( beat ) {
             Tone.Transport.schedule( ( time ) => {
-              console.log( time )
-              synth.triggerAttackRelease( notes[ ind ], Tone.Time( "4n" ), time )
-            }, i * Tone.Time( "4n" ) )
+              synth.triggerAttackRelease( notes[ ind ], Tone.Time( this.noteDuration ), time )
+            }, i * Tone.Time( this.noteDuration ) )
           }
         } )
       } )
@@ -127,6 +175,9 @@ export default {
         octave: this.octaves[ initialChoice ],
       } )
     },
+    resizeCallback() {
+      this.$refs.rain.resize()
+    },
   },
 }
 </script>
@@ -151,13 +202,19 @@ export default {
     justify-content center
 
     border 2px solid var(--main-color)
-    cursor pointer
 
     .tracks
+      z-index 1
       display flex
       flex-direction column
       align-items flex-start
       justify-content flex-start
+
+      & > .buttons
+        width 100%
+        display flex
+        align-items center
+        justify-content center
 
       & > .track
         display flex
@@ -166,7 +223,9 @@ export default {
           width 2em
           height 2em
           margin 0.125em
+          background-color var(--main-bg-color)
           border 1px solid var(--main-color)
+          cursor pointer
 
           &.active
             background-color var(--main-color)
@@ -175,5 +234,14 @@ export default {
           display flex
           align-items center
           justify-content stretch
+
+  #matrix-rain,
+  #overlay
+    position absolute
+    height 100%
+    width 100%
+
+  #overlay
+    background-color var(--main-bg-color)
 
 </style>

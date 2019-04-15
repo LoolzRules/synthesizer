@@ -7,14 +7,14 @@
           v-if="mode === modes[1]"/>
       <looper
           v-if="mode === modes[2]"/>
-      <div id="settings" :style="{ width: settingsDisplay ? null : '2em' }">
+      <div id="settings" :class="{ hidden: !settingsDisplay }">
         <div id="toggle">
           <label class="checkbox-label">
             <input type="checkbox" v-model="settingsDisplay">
             <span class="checkmark"></span>
           </label>
         </div>
-        <div>
+        <div id="hide-me">
           <label>
             <span class="label">Instrument:</span>
             <select v-model="mode">
@@ -137,6 +137,7 @@ export default {
     startAudioContext() {
       Tone.context.resume()
       this.started = true
+      this.showLoadingScreen()
     },
   },
 }
@@ -167,6 +168,12 @@ export default {
     background-color var(--main-bg-color)
     border 2px solid var(--main-color)
 
+    width 20em
+    transition width 0.25s ease 0s
+
+    &.hidden
+      width 2em
+
     & > #toggle
       padding 0.25em
       flex 0 0 auto
@@ -187,19 +194,12 @@ export default {
 
           &:after
             display block
-            left 0.375em
-            top 0.25em
-            width 0.5em
-            height 0.5em
-            border solid var(--main-color)
-            border-width 0 0.125em 0.125em 0
-            transform rotate(135deg)
+            content "◄"
 
         & input:checked ~ .checkmark:after
-          left 0.125em
-          transform rotate(-45deg)
+          content "►"
 
-    & > div:not(#toggle)
+    & > #hide-me
       padding 0.5em
       flex 1 1 auto
 

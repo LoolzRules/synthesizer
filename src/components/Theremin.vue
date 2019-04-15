@@ -1,10 +1,7 @@
 <template>
   <div id="theremin-wrap">
     <div id="theremin" ref="theremin">
-      <matrix-rain id="matrix-rain" ref="rain"/>
-      <div id="overlay" :style="{
-        opacity: opacity/100,
-      }"></div>
+      <grid id="grid" ref="grid"/>
       <touch-tracker id="touch-tracker" ref="tracker"/>
     </div>
     <div id="info">
@@ -29,15 +26,6 @@
             </option>
           </select>
         </label>
-        <label>
-          <span class="label">
-            BG opacity: {{ (opacity/(opacityConfig.max - opacityConfig.min)).toFixed(2) }}
-          </span>
-          <input id="volume" type="range"
-                 v-model="opacity"
-                 :min="opacityConfig.min"
-                 :max="opacityConfig.max">
-        </label>
       </div>
     </div>
   </div>
@@ -45,14 +33,14 @@
 
 <script>
 import { mapState, } from "vuex"
-import MatrixRain from "./MatrixRain"
+import Grid from "./Grid"
 import TouchTracker from "./TouchTracker"
 import Tone from "tone"
 
 export default {
   name: "theremin",
   components: {
-    MatrixRain,
+    Grid,
     TouchTracker,
   },
   data() {
@@ -60,15 +48,6 @@ export default {
       isPlaying: false,
       synth: null,
       volume: null,
-      opacityConfig: {
-        min: 0,
-        max: 100,
-      },
-      volumeConfig: {
-        max: 20,
-        min: -30,
-        diff: 50,
-      },
     }
   },
   computed: {
@@ -78,6 +57,7 @@ export default {
       "oscillatorTypes",
       "octaveOffsets",
       "octaveRange",
+      "volumeConfig",
     ] ),
     oscillatorType: {
       get() {
@@ -93,14 +73,6 @@ export default {
       },
       set( offset ) {
         this.$store.commit( "theremin/octaveOffset", offset )
-      },
-    },
-    opacity: {
-      get() {
-        return this.$store.state.theremin.bgOpacity
-      },
-      set( opacity ) {
-        this.$store.commit( "theremin/bgOpacity", opacity )
       },
     },
     minIndex() {
@@ -125,16 +97,12 @@ export default {
     Tone.context.master.volume.value = 0
 
     const initialChoice = 0
-    const initialOpacity = 100
     this.oscillatorType = this.oscillatorType
       ? this.oscillatorType
       : this.oscillatorTypes[ initialChoice ]
     this.octaveOffset = this.octaveOffset
       ? this.octaveOffset
       : this.octaveOffsets[ initialChoice ]
-    this.opacity = this.opacity
-      ? this.opacity
-      : initialOpacity
 
     this.synth = new Tone.Synth( {
       oscillator: {
@@ -155,7 +123,7 @@ export default {
     this.$refs.theremin.addEventListener( "touchend", this.upEventListener, false )
     this.$refs.theremin.addEventListener( "touchmove", this.moveEventListener, false )
 
-    window.addEventListener( "resize", this.resizeCanvases, true )
+    window.addEventListener( "resize", this.resizeCallback, true )
 
     this.$parent.scheduleHideLoadingScreen()
   },
@@ -171,7 +139,7 @@ export default {
     this.$refs.theremin.removeEventListener( "touchend", this.upEventListener, false )
     this.$refs.theremin.removeEventListener( "touchmove", this.moveEventListener, false )
 
-    window.removeEventListener( "resize", this.resizeCanvases, true )
+    window.removeEventListener( "resize", this.resizeCallback, true )
   },
   methods: {
     downEventListener( event ) {
@@ -221,8 +189,8 @@ export default {
         t: performance.now(),
       }
     },
-    resizeCanvases() {
-      this.$refs.rain.resize()
+    resizeCallback() {
+      this.$refs.grid.resize()
       this.$refs.tracker.resize()
     },
   },
@@ -250,21 +218,10 @@ export default {
     border 2px solid var(--main-color)
     cursor pointer
 
-    & > span
-      text-transform uppercase
-      text-shadow: 0 0 0.25em var(--main-bg-color), 0 0 0.5em var(--main-bg-color)
-      font-size 2.5em
-      font-weight bold
-      z-index 1
-
-  #matrix-rain,
-  #overlay,
+  #grid,
   #touch-tracker
     position absolute
     height 100%
     width 100%
-
-  #overlay
-    background-color var(--main-bg-color)
 
 </style>

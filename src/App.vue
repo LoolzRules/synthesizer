@@ -28,6 +28,49 @@ export default {
 </script>
 
 <style lang="stylus">
+  html, body, div, span, applet, object, iframe,
+  h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+  a, abbr, acronym, address, big, cite, code,
+  del, dfn, em, img, ins, kbd, q, s, samp,
+  small, strike, strong, sub, sup, tt, var,
+  b, u, i, center,
+  dl, dt, dd, ol, ul, li,
+  fieldset, form, label, legend,
+  table, caption, tbody, tfoot, thead, tr, th, td,
+  article, aside, canvas, details, embed,
+  figure, figcaption, footer, header, hgroup,
+  menu, nav, output, ruby, section, summary,
+  time, mark, audio, video, input, select, option
+    margin 0
+    padding 0
+    border 0
+    font inherit
+    font-size 100%
+    vertical-align baseline
+
+  article, aside, details,
+  figcaption, figure, footer, header,
+  hgroup, menu, nav, section
+    display block
+
+  body
+    line-height 1
+
+  ol, ul
+    list-style none
+
+  blockquote, q
+    quotes none
+
+  blockquote:before, blockquote:after, q:before, q:after
+    content ""
+    content none
+
+  table
+    border-collapse collapse
+    border-spacing 0
+
+  // My styles
   :root
     --font "Courier New"
 
@@ -45,43 +88,46 @@ export default {
     trackHeight = .5em
     borderRadius = 1.375em
     size = 1.375em
-    borderWidth = 2px
+    borderWidth = 0.0625em
+    thumbBorderWidth = 2 * borderWidth
 
     -webkit-appearance none
     margin 0
+    height size
+    background none
 
     &::-webkit-slider-runnable-track
       width 100%
       height trackHeight
       cursor pointer
-      background var(--main-color)
+      background var(--main-bg-color)
       border-radius 0
-      border borderWidth solid var(--main-bg-color)
+      border borderWidth solid var(--main-color)
 
     &::-webkit-slider-thumb
-      border borderWidth solid var(--main-bg-color)
+      border thumbBorderWidth solid var(--main-color)
       height size
       width size
       border-radius borderRadius
-      background var(--main-color)
+      background var(--main-bg-color)
       cursor pointer
       -webkit-appearance none
-      margin-top (trackHeight/ 2 - size/ 2 - unit(borderWidth / 16, em))
+      margin-top (trackHeight/ 2 - size/ 2 - borderWidth)
 
     &::-moz-range-track
       width 100%
       height trackHeight
       cursor pointer
-      background var(--main-color)
+      background var(--main-bg-color)
       border-radius 0
-      border borderWidth solid var(--main-bg-color)
+      border borderWidth solid var(--main-color)
 
     &::-moz-range-thumb
       height size
       width size
-      background var(--main-color)
+      background var(--main-bg-color)
       border-radius borderRadius
-      border borderWidth solid var(--main-bg-color)
+      border thumbBorderWidth solid var(--main-color)
       cursor pointer
 
     &::-ms-track
@@ -93,33 +139,43 @@ export default {
       color transparent
 
     &::-ms-fill-lower
-      background var(--main-color)
-      border borderWidth solid var(--main-bg-color)
+      background var(--main-bg-color)
+      border borderWidth solid var(--main-color)
       border-radius 0
 
     &::-ms-fill-upper
-      background var(--main-color)
-      border borderWidth solid var(--main-bg-color)
+      background var(--main-bg-color)
+      border borderWidth solid var(--main-color)
       border-radius 0
 
     &::-ms-thumb
-      border borderWidth solid var(--main-bg-color)
+      border thumbBorderWidth solid var(--main-color)
       height size
       width size
       border-radius borderRadius
-      background var(--main-color)
+      background var(--main-bg-color)
       cursor pointer
 
     &:focus
       outline none
 
       &::-webkit-slider-runnable-track
-        background var(--main-color)
+        background var(--main-bg-color)
 
       &::-ms-fill-lower
-        background var(--main-color)
+        background var(--main-bg-color)
 
       &::-ms-fill-upper
+        background var(--main-bg-color)
+
+    &:active
+      &::-webkit-slider-thumb
+        background var(--main-color)
+
+      &::-moz-range-thumb
+        background var(--main-color)
+
+      &::-ms-thumb
         background var(--main-color)
 
   input[type=button]
@@ -145,8 +201,13 @@ export default {
     justify-content space-between
     align-items center
 
-    & > span
+    & > span.label
       margin-right 1em
+
+      & > span.rangeValue
+        display inline-block
+        text-align center
+        min-width 3em
 
     & > select
       box-sizing border-box
@@ -165,28 +226,25 @@ export default {
       position relative
       cursor pointer
 
+      input[type=checkbox]
+        display none
+
       & > .checkmark
-        position absolute
-        top 0
-        right 0
         box-sizing border-box
-        height 1.125em
-        width 1.125em
+        height 1.375em
+        width 1.375em
         margin 0
+
+        display flex
+        align-items center
+        justify-content center
+
         border 1px solid var(--main-color)
         background-color var(--main-bg-color)
 
         &:after
-          content ""
-          position absolute
+          content "✔"
           display none
-          left 0.3em
-          top 0.1em
-          width 0.25em
-          height 0.5em
-          border solid var(--main-color)
-          border-width 0 0.125em 0.125em 0
-          transform rotate(45deg)
 
       & input:checked ~ .checkmark:after
         display block

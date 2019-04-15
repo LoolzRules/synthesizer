@@ -7,11 +7,11 @@
     <input type="button" value="start"
            @click="$parent.startAudioContext"/>
     <span class="underButton">
-        On smaller devices landscape fullscreen is advised
-      </span>
+      On smaller devices landscape fullscreen is advised
+    </span>
     <span class="underButton">
-        By pressing START button you accept <a href="https://bit.ly/loolzToS">Terms of Service</a>
-      </span>
+      By pressing START button you accept <a href="https://bit.ly/loolzToS">Terms of Service</a>
+    </span>
   </div>
 </template>
 
@@ -77,6 +77,7 @@ export default {
 <style lang="stylus">
   #start-overlay
     position absolute
+    z-index 1000
     box-sizing border-box
     height 100%
     width 100%

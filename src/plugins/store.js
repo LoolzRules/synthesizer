@@ -69,6 +69,10 @@ const synthesizer = {
     oscillatorTypes: [ "sine", "square", "sawtooth", "triangle", ],
     octaveOffsets: [ 0, 1, 2, 3, 4, 5, ],
     octaveRange: 4,
+    volumeConfig: {
+      max: 20,
+      min: -30,
+    },
 
     oscillatorType: null,
     octaveOffset: null,
@@ -105,11 +109,16 @@ const theremin = {
     numberOfNotesInOctave: 12,
     oscillatorTypes: [ "sine", "square", "sawtooth", "triangle", ],
     octaveOffsets: [ 0, 1, 2, 3, 4, 5, ],
-    octaveRange: 4,
+    octaveRange: 2,
+    volumeConfig: {
+      max: 20,
+      min: -30,
+      diff: 50,
+      steps: 5,
+    },
 
     oscillatorType: null,
     octaveOffset: null,
-    bgOpacity: null,
   },
   mutations: {
     oscillatorType( state, type ) {
@@ -117,9 +126,6 @@ const theremin = {
     },
     octaveOffset( state, offset ) {
       state.octaveOffset = +offset
-    },
-    bgOpacity( state, val ) {
-      state.bgOpacity = +val
     },
   },
 }
@@ -143,6 +149,17 @@ const looper = {
     numberOfMajorNotesInOctave: 7,
     numberOfNotesInOctave: 12,
     oscillatorTypes: [ "sine", "square", "sawtooth", "triangle", ],
+    opacityConfig: {
+      min: 0,
+      max: 100,
+    },
+
+    bgOpacity: null,
+  },
+  mutations: {
+    bgOpacity( state, val ) {
+      state.bgOpacity = +val
+    },
   },
 }
 

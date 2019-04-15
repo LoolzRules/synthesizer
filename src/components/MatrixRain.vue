@@ -26,6 +26,7 @@ export default {
       ELEMENT_HEIGHT: 0,
       LETTER_SCALING: 0.75,
       SHIFT_PROBABILITY: 0.5,
+      FADE_LENGTH: 16,
       prevTime: null,
       animID: null,
       hasJustChanged: null,
@@ -38,7 +39,7 @@ export default {
     ] ),
     colors() {
       // eslint-disable-next-line no-magic-numbers
-      return interpolateColors( ...this.colorSchemes[ this.colorScheme ], 16 )
+      return interpolateColors( ...this.colorSchemes[ this.colorScheme ], this.FADE_LENGTH )
     },
   },
   watch: {
