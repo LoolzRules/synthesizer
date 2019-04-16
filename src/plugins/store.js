@@ -153,6 +153,10 @@ const looper = {
       min: 0,
       max: 100,
     },
+    tempoConfig: {
+      max: 180,
+      min: 60,
+    },
 
     bgOpacity: null,
   },

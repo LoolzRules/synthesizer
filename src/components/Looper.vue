@@ -5,41 +5,58 @@
       <div id="overlay"
            :style="{ opacity: opacity/100 }">
       </div>
-      <div class="tracks">
-        <div v-for="( synth, si ) in this.poly" :key="si"
-             class="track">
-          <div v-for="( beat, bi ) in beats[si]" :key="bi"
-               @click="$set(beats[si], bi, !beat)"
-               class="beat" :class="{ active: beat }">
+      <div class="tracks-wrap">
+        <div class="tracks">
+          <div v-for="( synth, si ) in this.poly" :key="si"
+               class="track">
+            <div class="track-controls">
+              <label>
+                <select v-model="synthNotes[si].note">
+                  <option v-for="( option, index ) in notes"
+                          :key="index"
+                          :value="option">
+                    {{ option }}
+                  </option>
+                </select>
+              </label>
+              <label>
+                <select v-model="synthNotes[si].octave">
+                  <option v-for="( option, index ) in octaves"
+                          :key="index"
+                          :value="option">
+                    {{ option }}
+                  </option>
+                </select>
+              </label>
+              <input type="button" value="✖"
+                     @click="deleteTrack(si)"/>
+            </div>
+            <div class="beats">
+              <div v-for="( beat, bi ) in beats[si]" :key="bi"
+                   @click="setBeat( si, bi, !beat )"
+                   class="beat" :class="{ active: beat, unavailable: loopConfig.isPlaying }">
+              </div>
+            </div>
           </div>
-          <div class="track-controls">
-            <label>
-              <select v-model="synthNotes[si].note">
-                <option v-for="( option, index ) in notes"
-                        :key="index"
-                        :value="option">
-                  {{ option }}
-                </option>
-              </select>
-            </label>
-            <label>
-              <select v-model="synthNotes[si].octave">
-                <option v-for="( option, index ) in octaves"
-                        :key="index"
-                        :value="option">
-                  {{ option }}
-                </option>
-              </select>
-            </label>
+          <div class="progress-wrap">
+          <span class="label">
+            Position:
+          </span>
+            <div class="progress" :style="{ background: trackConfig.background }">
+            </div>
           </div>
-        </div>
-        <div class="buttons">
-          <input type="button" value="+"
-                 @click="addTrack"/>
-          <input type="button" value="►"
-                 @click="play"/>
-          <input type="button" value="■"
-                 @click="stop"/>
+          <div class="buttons">
+            <input type="button" :value="loopConfig.isPlaying ? '❚❚' : '►' "
+                   @click="playOrPause"/>
+            <input type="button" value="■"
+                   :style="{ opacity: loopConfig.isPlaying || loopConfig.isPaused ? 1 : 0.5 }"
+                   @click="stop"/>
+            <input type="button" value="↺"
+                   :style="{ opacity: isLooping ? 1 : 0.5 }"
+                   @click="toggleLooping"/>
+            <input type="button" value="+"
+                   @click="addTrack"/>
+          </div>
         </div>
       </div>
     </div>
@@ -76,6 +93,7 @@
 
 <script>
 import MatrixRain from "./MatrixRain"
+import numToCol from "../utils/numToCol"
 import { mapState, } from "vuex"
 import Tone from "tone"
 
@@ -91,18 +109,32 @@ export default {
       synthNotes: [],
       beatsInTrack: 16,
       tempo: null,
-      tempoConfig: {
-        max: 180,
-        min: 60,
-      },
       noteDuration: "4n",
+      trackConfig: {
+        minPercent: 1,
+        maxPercent: 99,
+        background: null,
+        animationID: null,
+      },
+      loopConfig: {
+        duration: "4m",
+        tickDuration: null,
+        isPlaying: null,
+        isPaused: null,
+      },
+      isLooping: null,
     }
   },
   computed: {
+    ...mapState( "app", [
+      "colorSchemes",
+      "colorScheme",
+    ] ),
     ...mapState( "looper", [
       "notes",
       "octaves",
       "opacityConfig",
+      "tempoConfig",
     ] ),
     opacity: {
       get() {
@@ -114,12 +146,18 @@ export default {
     },
   },
   watch: {
-    tempo() {
-      Tone.Transport.bpm.value = this.tempo
+    tempo( val ) {
+      Tone.Transport.bpm.value = val
+    },
+    isLooping( val ) {
+      Tone.Transport.loop = val
     },
   },
   mounted() {
     this.tempo = Tone.Transport.bpm.value
+    this.isLooping = Tone.Transport.loop
+    Tone.Transport.setLoopPoints( 0, this.loopConfig.duration )
+    this.loopConfig.tickDuration = Tone.Transport.toTicks( this.loopConfig.duration )
 
     const initialOpacity = 100
     this.opacity = this.opacity
@@ -129,16 +167,27 @@ export default {
     this.addTrack()
     this.$parent.scheduleHideLoadingScreen()
 
+    this.updateProgressBackground()
+
     window.addEventListener( "resize", this.resizeCallback, true )
   },
   beforeDestroy() {
+    Tone.Transport.loop = false
+    this.stop()
     window.removeEventListener( "resize", this.resizeCallback, true )
+    window.cancelAnimationFrame( this.trackConfig.animationID )
   },
   methods: {
-    play() {
+    playOrPause() {
       if ( Tone.Transport.state === "started" ) {
-        this.stop()
+        this.loopConfig.isPlaying = false
+        this.loopConfig.isPaused = true
+
+        Tone.Transport.pause()
+        Tone.Transport.cancel()
+        return
       }
+
       const notes = this.synthNotes.map( note => `${note.note}${note.octave}` )
       this.poly.forEach( ( synth, ind ) => {
         this.beats[ ind ].forEach( ( beat, i ) => {
@@ -149,11 +198,25 @@ export default {
           }
         } )
       } )
+
+      if ( !this.isLooping ) {
+        Tone.Transport.schedule( _ => {
+          this.stop()
+        }, this.loopConfig.duration )
+      }
+
+      this.loopConfig.isPlaying = true
+      this.loopConfig.isPaused = false
       Tone.Transport.start()
     },
     stop() {
+      this.loopConfig.isPlaying = false
+      this.loopConfig.isPaused = false
       Tone.Transport.stop()
       Tone.Transport.cancel()
+    },
+    toggleLooping() {
+      this.isLooping = !this.isLooping
     },
     addTrack() {
       this.poly.push( new Tone.Synth( {
@@ -175,8 +238,30 @@ export default {
         octave: this.octaves[ initialChoice ],
       } )
     },
+    deleteTrack( index ) {
+      this.poly.splice( index, 1 )
+      this.beats.splice( index, 1 )
+      this.synthNotes.splice( index, 1 )
+    },
+    setBeat( si, bi, val ) {
+      if ( !this.loopConfig.isPlaying ) {
+        this.$set( this.beats[ si ], bi, val )
+      }
+    },
     resizeCallback() {
       this.$refs.rain.resize()
+    },
+    updateProgressBackground() {
+      const percentRange = this.trackConfig.maxPercent - this.trackConfig.minPercent
+      const progress = ( ( Tone.Transport.ticks * percentRange / this.loopConfig.tickDuration ) | 0 ) + this.trackConfig.minPercent
+      const color = numToCol( this.colorSchemes[ this.colorScheme ][ 0 ] )
+
+      this.trackConfig.background = `linear-gradient(90deg, ${color} ${this.trackConfig.minPercent}%, transparent ${this.trackConfig.minPercent}%,
+        transparent ${progress}%, ${color} ${progress}%,
+        ${color} ${progress + 1}%, transparent ${progress + 1}%,
+        transparent ${this.trackConfig.maxPercent}%, ${color} ${this.trackConfig.maxPercent}% )`.replace( /\n\s+/g, " " )
+
+      this.trackConfig.animationID = window.requestAnimationFrame( this.updateProgressBackground )
     },
   },
 }
@@ -192,48 +277,103 @@ export default {
 
   #looper
     position relative
-    width 100%
+    min-width 100%
     box-sizing border-box
     flex 1 1 auto
 
     display flex
-    flex-direction column
-    align-items center
-    justify-content center
+    overflow hidden
 
     border 2px solid var(--main-color)
 
-    .tracks
-      z-index 1
+    .tracks-wrap
+      width 100%
+      height 100%
       display flex
       flex-direction column
-      align-items flex-start
-      justify-content flex-start
+      align-items center
+      justify-content center
+      flex-wrap wrap
+      overflow-x auto
 
-      & > .buttons
-        width 100%
-        display flex
-        align-items center
-        justify-content center
+      -ms-overflow-style none
+      overflow -moz-scrollbars-none
 
-      & > .track
-        display flex
+      &::-webkit-scrollbar
+        display none
 
-        & > .beat
-          width 2em
-          height 2em
-          margin 0.125em
-          background-color var(--main-bg-color)
-          border 1px solid var(--main-color)
-          cursor pointer
+      & > .tracks
+        z-index 1
+        padding 0.5em
+        max-width 35em
+        overflow-y auto
 
-          &.active
-            background-color var(--main-color)
+        -ms-overflow-style none
+        overflow -moz-scrollbars-none
 
-        & > .track-controls
+        &::-webkit-scrollbar
+          display none
+
+        & > .buttons
+          width 100%
           display flex
           align-items center
-          justify-content stretch
+          justify-content center
+          font-size 1.5em
+          font-weight bold
+
+          & > input[type=button]
+            height 2em
+            width 2em
+            margin 0.125em
+            padding-top 0.45em
+
+        & > .progress-wrap
+          width 100%
+          height 1em
+          display flex
+
+          & > .label
+            width 7em
+
+          & > .progress
+            flex 1 1 auto
+
+        & > .track
+          width 100%
+          display flex
+
+          & > .beats
+            flex 1 1 auto
+            display flex
+            align-items stretch
+            justify-content space-between
+            padding 0.125em 0
+            width 28em
+
+            & > .beat
+              box-sizing border-box
+              width 1.5em
+              height 1.5em
+              background-color var(--main-bg-color)
+              border 1px solid var(--main-color)
+              cursor pointer
+
+              &.active
+                background-color var(--main-color)
+
+              &.unavailable
+                opacity 0.75
+
+          & > .track-controls
+            width 7em
+            flex 0 0 auto
+            display flex
+            align-items center
+            justify-content stretch
+
+            & > input[type=button]
+              padding 0.125em 0.2em
 
   #matrix-rain,
   #overlay

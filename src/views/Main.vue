@@ -159,6 +159,7 @@ export default {
     position absolute
     bottom 0
     right 0
+    z-index 998
     box-sizing border-box
 
     display flex

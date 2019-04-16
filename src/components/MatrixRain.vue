@@ -29,7 +29,6 @@ export default {
       FADE_LENGTH: 16,
       prevTime: null,
       animID: null,
-      hasJustChanged: null,
     }
   },
   computed: {
@@ -40,11 +39,6 @@ export default {
     colors() {
       // eslint-disable-next-line no-magic-numbers
       return interpolateColors( ...this.colorSchemes[ this.colorScheme ], this.FADE_LENGTH )
-    },
-  },
-  watch: {
-    colors() {
-      this.hasJustChanged = true
     },
   },
   mounted() {
@@ -77,8 +71,6 @@ export default {
       this.gCtx.font = `bold ${this.ELEMENT_SIZE * this.LETTER_SCALING}px ${font}`
     },
     initRain() {
-      this.hasJustChanged = true
-
       for ( let i = 0; i < this.rainIndices.length; i++ ) {
         this.rainIndices[ i ] = ( ( Math.random() * this.MAX_VALUE ) | 0 ) - this.MAX_VALUE
       }
@@ -94,16 +86,12 @@ export default {
 
       this.prevTime = time
 
-      if ( this.hasJustChanged ) {
-        this.hasJustChanged = false
-        const origin = 0
-        this.placeRectangle(
-          this.selectLast( this.colors ),
-          origin, origin,
-          this.$refs.matrixRain.width,
-          this.$refs.matrixRain.height
-        )
-      }
+      const origin = 0
+      this.gCtx.clearRect(
+        origin, origin,
+        this.$refs.matrixRain.width,
+        this.$refs.matrixRain.height
+      )
 
       for ( let i = 0; i < this.ROW_LENGTH; i++ ) {
         this.rainIndices[ i ] = ++this.rainIndices[ i ] % this.MAX_VALUE
@@ -116,14 +104,6 @@ export default {
           const color = this.colors[ colorIndex ]
 
           if ( color ) {
-            this.placeRectangle(
-              this.selectLast( this.colors ),
-              i * this.ELEMENT_WIDTH,
-              j * this.ELEMENT_HEIGHT,
-              this.ELEMENT_WIDTH,
-              this.ELEMENT_HEIGHT
-            )
-
             const letterGroupIndex = Math.random() * this.letters.length | 0
             const letterGroup = this.letters[ letterGroupIndex ]
             const shiftToCenter = 0.5
@@ -138,16 +118,6 @@ export default {
       }
 
       this.animID = window.requestAnimationFrame( this.updateRain )
-    },
-    selectLast( array ) {
-      // eslint-disable-next-line no-magic-numbers
-      return array.slice( -1 ).pop()
-    },
-    placeRectangle( col, x1, y1, x2, y2 ) {
-      this.gCtx.shadowBlur = 0
-      this.gCtx.shadowColor = col
-      this.gCtx.fillStyle = col
-      this.gCtx.fillRect( x1, y1, x2, y2 )
     },
     placeLetter( col, l, x, y ) {
       this.gCtx.shadowBlur = 4

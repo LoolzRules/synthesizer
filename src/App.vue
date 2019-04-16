@@ -179,7 +179,10 @@ export default {
         background var(--main-color)
 
   input[type=button]
-    padding 0.5em
+    display flex
+    align-items center
+    justify-content center
+    padding 0.375em 0.5em
     font inherit
     color var(--main-color)
     outline none

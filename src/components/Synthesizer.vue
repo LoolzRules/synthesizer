@@ -341,7 +341,7 @@ export default {
       color var(--main-color)
       background-color var(--main-bg-color)
 
-      transition color 0.5s ease 0s, background-color 0.5s ease 0s
+      transition color 0.25s ease 0s, background-color 0.25s ease 0s
 
       &.played
         color var(--main-bg-color)
